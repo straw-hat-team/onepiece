@@ -1,0 +1,18 @@
+version: '3'
+
+dotenv:
+  - '{{.HOME}}/.sht.env'
+
+vars:
+  PROJECT_DIR:
+    sh: git rev-parse --show-toplevel
+
+includes:
+  plandomain:
+    taskfile: ./tests/integrations/plandomain/Taskfile.yaml
+    dir: ./tests/integrations/plandomain
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
