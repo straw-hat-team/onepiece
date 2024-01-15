@@ -1,0 +1,10 @@
+version: v1
+name: buf.build/straw-hat-llc/plans
+deps:
+  - buf.build/protocolbuffers/wellknowntypes:v3.0.2
+breaking:
+  use:
+    - FILE
+lint:
+  use:
+    - DEFAULT

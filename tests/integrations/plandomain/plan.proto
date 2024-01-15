@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+package com.hmbradley.deposit.plan;
+
+import "google/protobuf/timestamp.proto";
+
+message Command {
+  map<string, string> context = 1;
+
+  oneof command {
+    CreatePlan createPlan = 2;
+  }
+}
+
+message Event {
+  map<string, string> context = 1;
+
+  oneof event {
+    PlanCreated planCreated = 2;
+    PlanUpdated planUpdated = 3;
+    PlanArchived planArchived = 4;
+    PlanDrained planDrained = 5;
+    PlanDrainingFailed planDrainingFailed = 6;
+  }
+}
+
+message CreatePlan {
+  string planId = 1;
+  string title = 2;
+  string color = 3;
+  Amount goalAmount = 4;
+  string description = 5;
+  string icon = 6;
+  google.protobuf.Timestamp createdAt = 7;
+  string depositAccountId = 8;
+}
+
+message Amount {
+  int64 amount = 1;
+  string denomination = 2;
+}
+
+message PlanCreated {
+  string planId = 1;
+  string title = 2;
+  string color = 3;
+  Amount goalAmount = 4;
+  string description = 5;
+  string icon = 6;
+  google.protobuf.Timestamp createdAt = 7;
+  string depositAccountId = 8;
+}
+
+message PlanUpdated {
+  string planId = 1;
+  string title = 2;
+  string color = 3;
+  Amount goalAmount = 4;
+  string description = 5;
+  string icon = 6;
+  google.protobuf.Timestamp updatedAt = 7;
+}
+
+message PlanArchived {
+  string planId = 1;
+  string archivedBy = 2;
+  google.protobuf.Timestamp archivedAt = 3;
+}
+
+message PlanDrained {
+  string planId = 1;
+  string transferId = 2;
+  google.protobuf.Timestamp drainedAt = 3;
+}
+
+message PlanDrainingFailed {
+  string planId = 1;
+  string transferId = 2;
+  google.protobuf.Timestamp failedAt = 4;
+}
