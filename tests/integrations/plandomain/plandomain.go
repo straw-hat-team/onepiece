@@ -3,26 +3,32 @@ package plandomain
 import (
 	"errors"
 	"github.com/straw-hat-team/onepiece-go/onepiece"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 )
 
-type Plan struct {
-	PlanId *string
+var ErrAlreadyExists = errors.New("plan already exists")
+var ErrNotFound = errors.New("plan not found")
+var ErrAlreadyArchived = errors.New("plan already archived")
+
+var Decider = onepiece.NewDecider(decide, evolve)
+
+type state struct {
+	planId     *string
+	isArchived bool
 }
 
-var ErrAlreadyExists = errors.New("plan already exists")
-
-func Decide(state Plan, command *Command) ([]*Event, error) {
+func decide(state state, command *planproto.Command) ([]*planproto.Event, error) {
 	switch c := command.Command.(type) {
-	case *Command_CreatePlan:
-		if state.PlanId != nil {
+	case *planproto.Command_CreatePlan:
+		if state.planId != nil {
 			return nil, ErrAlreadyExists
 		}
 
-		return []*Event{
+		return []*planproto.Event{
 			{
 				Context: command.Context,
-				Event: &Event_PlanCreated{
-					PlanCreated: &PlanCreated{
+				Event: &planproto.Event_PlanCreated{
+					PlanCreated: &planproto.PlanCreated{
 						PlanId:           c.CreatePlan.PlanId,
 						Title:            c.CreatePlan.Title,
 						Color:            c.CreatePlan.Color,
@@ -35,15 +41,40 @@ func Decide(state Plan, command *Command) ([]*Event, error) {
 				},
 			},
 		}, nil
+
+	case *planproto.Command_ArchivePlan:
+		if state.planId == nil {
+			return nil, ErrNotFound
+		}
+		if state.isArchived {
+			return nil, ErrAlreadyArchived
+		}
+
+		return []*planproto.Event{
+			{
+				Context: command.Context,
+				Event: &planproto.Event_PlanArchived{
+					PlanArchived: &planproto.PlanArchived{
+						PlanId:     c.ArchivePlan.PlanId,
+						ArchivedBy: c.ArchivePlan.ArchivedBy,
+						ArchivedAt: c.ArchivePlan.ArchivedAt,
+					},
+				},
+			},
+		}, nil
+
 	default:
 		return nil, onepiece.ErrUnknownCommand
 	}
 }
 
-func Evolve(state Plan, event *Event) Plan {
+func evolve(state state, event *planproto.Event) state {
 	switch event.Event.(type) {
-	case *Event_PlanCreated:
-		state.PlanId = &event.GetPlanCreated().PlanId
+	case *planproto.Event_PlanCreated:
+		state.planId = &event.GetPlanCreated().PlanId
+		return state
+	case *planproto.Event_PlanArchived:
+		state.isArchived = true
 		return state
 	default:
 		return state

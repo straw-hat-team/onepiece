@@ -2,7 +2,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain
+    default: github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto
 plugins:
   - plugin: buf.build/protocolbuffers/go
     out: .

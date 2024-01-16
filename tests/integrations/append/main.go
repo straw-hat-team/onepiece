@@ -6,7 +6,7 @@ import (
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
 	"github.com/gofrs/uuid"
 	"github.com/straw-hat-team/onepiece-go/onepiece"
-	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/planinfra"
 )
 
@@ -18,11 +18,11 @@ func main() {
 	}
 
 	planID := uuid.Must(uuid.NewV4()).String()
-	command := &plandomain.CreatePlan{
+	command := &planproto.CreatePlan{
 		PlanId: planID,
 		Title:  "Vacation",
 		Color:  "#FF0000",
-		GoalAmount: &plandomain.Amount{
+		GoalAmount: &planproto.Amount{
 			Amount:       1000,
 			Denomination: "USD",
 		},
@@ -35,8 +35,8 @@ func main() {
 	result, err := planinfra.SendCommand(
 		context.Background(),
 		db,
-		&plandomain.Command{
-			Command: &plandomain.Command_CreatePlan{CreatePlan: command},
+		&planproto.Command{
+			Command: &planproto.Command_CreatePlan{CreatePlan: command},
 		},
 		&onepiece.Options{
 			ExpectedRevision: onepiece.Revision(0),
