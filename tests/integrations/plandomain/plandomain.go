@@ -6,9 +6,9 @@ import (
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 )
 
-var ErrAlreadyExists = errors.New("plan already exists")
-var ErrNotFound = errors.New("plan not found")
-var ErrAlreadyArchived = errors.New("plan already archived")
+var ErrPlanExists = errors.New("plan already exists")
+var ErrPlanNotFound = errors.New("plan not found")
+var ErrPlanArchived = errors.New("plan already archived")
 
 var Decider = onepiece.NewDecider(decide, evolve)
 
@@ -21,7 +21,7 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 	switch c := command.Command.(type) {
 	case *planproto.Command_CreatePlan:
 		if state.planId != nil {
-			return nil, ErrAlreadyExists
+			return nil, ErrPlanExists
 		}
 
 		return []*planproto.Event{
@@ -44,10 +44,10 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 
 	case *planproto.Command_ArchivePlan:
 		if state.planId == nil {
-			return nil, ErrNotFound
+			return nil, ErrPlanNotFound
 		}
 		if state.isArchived {
-			return nil, ErrAlreadyArchived
+			return nil, ErrPlanArchived
 		}
 
 		return []*planproto.Event{
@@ -63,6 +63,30 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 			},
 		}, nil
 
+	case *planproto.Command_UpdatePlan:
+		if state.planId == nil {
+			return nil, ErrPlanNotFound
+		}
+		if state.isArchived {
+			return nil, ErrPlanArchived
+		}
+
+		return []*planproto.Event{
+			{
+				Context: command.Context,
+				Event: &planproto.Event_PlanUpdated{
+					PlanUpdated: &planproto.PlanUpdated{
+						PlanId:      c.UpdatePlan.PlanId,
+						Title:       c.UpdatePlan.Title,
+						Color:       c.UpdatePlan.Color,
+						GoalAmount:  c.UpdatePlan.GoalAmount,
+						Description: c.UpdatePlan.Description,
+						Icon:        c.UpdatePlan.Icon,
+						UpdatedAt:   c.UpdatePlan.UpdatedAt,
+					},
+				},
+			},
+		}, nil
 	default:
 		return nil, onepiece.ErrUnknownCommand
 	}

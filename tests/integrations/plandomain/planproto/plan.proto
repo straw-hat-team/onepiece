@@ -10,6 +10,7 @@ message Command {
   oneof command {
     CreatePlan createPlan = 2;
     ArchivePlan archivePlan = 3;
+    UpdatePlan updatePlan = 4;
   }
 }
 
@@ -23,6 +24,16 @@ message Event {
     PlanDrained planDrained = 5;
     PlanDrainingFailed planDrainingFailed = 6;
   }
+}
+
+message UpdatePlan {
+  string planId = 1;
+  string title = 2;
+  string color = 3;
+  Amount goalAmount = 4;
+  string description = 5;
+  string icon = 6;
+  google.protobuf.Timestamp updatedAt = 7;
 }
 
 message ArchivePlan {

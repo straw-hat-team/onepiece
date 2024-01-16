@@ -36,7 +36,7 @@ func (tc *TestCase[State, Command, Event]) Catch(err error) *TestCase[State, Com
 	return tc
 }
 
-func (tc *TestCase[State, Command, Event]) Run() {
+func (tc *TestCase[State, Command, Event]) Assert() {
 	state := tc.decider.InitialState()
 
 	for _, event := range tc.previousEvents {
