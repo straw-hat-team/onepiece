@@ -23,6 +23,10 @@ const (
 	ContentTypeJson   = esdb.ContentTypeJson
 )
 
+var (
+	ErrOptimisticConcurrency = errors.New("optimistic concurrency error")
+)
+
 type Any = esdb.Any
 type StreamExists = esdb.StreamExists
 type NoStream = esdb.NoStream
@@ -147,7 +151,10 @@ func NewEventSourcingDecider[State any, Command any, Event any](
 			ExpectedRevision: getExpectedRevision(opts, lastResolvedEvent),
 		}, eventData...)
 
-		if err != nil {
+		if err, ok := esdb.FromError(err); !ok {
+			if err.Code() == esdb.ErrorCodeWrongExpectedVersion {
+				return nil, ErrOptimisticConcurrency
+			}
 			return nil, err
 		}
 
@@ -165,7 +172,7 @@ func getExpectedRevision(opts *Options, lastResolvedEvent *esdb.ResolvedEvent) E
 	} else if lastResolvedEvent == nil {
 		return NoStream{}
 	} else {
-		return Revision(lastResolvedEvent.Event.EventNumber)
+		return Revision(lastResolvedEvent.OriginalEvent().EventNumber)
 	}
 }
 
