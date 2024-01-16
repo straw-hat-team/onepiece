@@ -203,3 +203,157 @@ func TestUpdatePlan(t *testing.T) {
 			}}}).Assert()
 	})
 }
+
+func TestDrainPlan(t *testing.T) {
+	t.Run("fails to drain a plan if the plan does not exist", func(t *testing.T) {
+		onepiecetesting.NewTestCase(t, plandomain.Decider).
+			When(&planproto.Command{Command: &planproto.Command_DrainPlan{DrainPlan: &planproto.DrainPlan{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).
+			Catch(plandomain.ErrPlanNotFound).
+			Assert()
+	})
+
+	t.Run("drains a plan", func(t *testing.T) {
+		onepiecetesting.NewTestCase(t, plandomain.Decider).
+			Given(&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+				Title:  "Vacation",
+				Color:  "#FF0000",
+				GoalAmount: &planproto.Amount{
+					Amount:       1000,
+					Denomination: "USD",
+				},
+				Description:      "Plan for a vacation",
+				Icon:             "https://some-url.com/icon.png",
+				CreatedAt:        timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+				DepositAccountId: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+			}}},
+				&planproto.Event{Event: &planproto.Event_PlanArchived{PlanArchived: &planproto.PlanArchived{
+					PlanId:     "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+					ArchivedBy: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+					ArchivedAt: timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+				}}},
+			).
+			When(&planproto.Command{Command: &planproto.Command_DrainPlan{DrainPlan: &planproto.DrainPlan{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).
+			Then(&planproto.Event{Event: &planproto.Event_PlanDrained{PlanDrained: &planproto.PlanDrained{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).Assert()
+	})
+
+	t.Run("fails to drain a plan if the plan is already drained", func(t *testing.T) {
+		onepiecetesting.NewTestCase(t, plandomain.Decider).
+			Given(
+				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
+					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+					Title:  "Vacation",
+					Color:  "#FF0000",
+					GoalAmount: &planproto.Amount{
+						Amount:       1000,
+						Denomination: "USD",
+					},
+					Description:      "Plan for a vacation",
+					Icon:             "https://some-url.com/icon.png",
+					CreatedAt:        timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+					DepositAccountId: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+				}}},
+				&planproto.Event{Event: &planproto.Event_PlanArchived{PlanArchived: &planproto.PlanArchived{
+					PlanId:     "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+					ArchivedBy: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+					ArchivedAt: timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+				}}},
+				&planproto.Event{Event: &planproto.Event_PlanDrained{PlanDrained: &planproto.PlanDrained{
+					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+				}}}).
+			When(&planproto.Command{Command: &planproto.Command_DrainPlan{DrainPlan: &planproto.DrainPlan{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).Catch(plandomain.ErrPlanDrained).Assert()
+	})
+
+	t.Run("fails to drain a plan if the plan is not archived", func(t *testing.T) {
+		onepiecetesting.NewTestCase(t, plandomain.Decider).
+			Given(
+				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
+					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+					Title:  "Vacation",
+					Color:  "#FF0000",
+					GoalAmount: &planproto.Amount{
+						Amount:       1000,
+						Denomination: "USD",
+					},
+					Description:      "Plan for a vacation",
+					Icon:             "https://some-url.com/icon.png",
+					CreatedAt:        timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+					DepositAccountId: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+				}}},
+				&planproto.Event{Event: &planproto.Event_PlanDrained{PlanDrained: &planproto.PlanDrained{
+					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+				}}}).
+			When(&planproto.Command{Command: &planproto.Command_DrainPlan{DrainPlan: &planproto.DrainPlan{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).Catch(plandomain.ErrPlanUnarchived).Assert()
+	})
+}
+
+func TestFailDrainPlan(t *testing.T) {
+	t.Run("fails to fail drain a plan if the plan does not exist", func(t *testing.T) {
+		onepiecetesting.NewTestCase(t, plandomain.Decider).
+			When(&planproto.Command{Command: &planproto.Command_FailDrainPlan{FailDrainPlan: &planproto.FailDrainPlan{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).
+			Catch(plandomain.ErrPlanNotFound).
+			Assert()
+	})
+
+	t.Run("fails to fail drain a plan if the plan is not archived", func(t *testing.T) {
+		onepiecetesting.NewTestCase(t, plandomain.Decider).
+			Given(
+				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
+					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+					Title:  "Vacation",
+					Color:  "#FF0000",
+					GoalAmount: &planproto.Amount{
+						Amount:       1000,
+						Denomination: "USD",
+					},
+					Description:      "Plan for a vacation",
+					Icon:             "https://some-url.com/icon.png",
+					CreatedAt:        timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+					DepositAccountId: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+				}}}).
+			When(&planproto.Command{Command: &planproto.Command_FailDrainPlan{FailDrainPlan: &planproto.FailDrainPlan{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).Catch(plandomain.ErrPlanUnarchived).Assert()
+	})
+
+	t.Run("fails to fail drain a plan if the plan is drained already", func(t *testing.T) {
+		onepiecetesting.NewTestCase(t, plandomain.Decider).
+			Given(
+				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
+					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+					Title:  "Vacation",
+					Color:  "#FF0000",
+					GoalAmount: &planproto.Amount{
+						Amount:       1000,
+						Denomination: "USD",
+					},
+					Description:      "Plan for a vacation",
+					Icon:             "https://some-url.com/icon.png",
+					CreatedAt:        timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+					DepositAccountId: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+				}}},
+				&planproto.Event{Event: &planproto.Event_PlanArchived{PlanArchived: &planproto.PlanArchived{
+					PlanId:     "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+					ArchivedBy: "583448c0-696f-4ce5-a4c0-785a3b5c1603",
+					ArchivedAt: timestamppb.New(time.Date(1993, 7, 22, 7, 30, 0, 0, time.UTC)),
+				}}},
+				&planproto.Event{Event: &planproto.Event_PlanDrained{PlanDrained: &planproto.PlanDrained{
+					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+				}}}).
+			When(&planproto.Command{Command: &planproto.Command_FailDrainPlan{FailDrainPlan: &planproto.FailDrainPlan{
+				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+			}}}).Catch(plandomain.ErrPlanDrained).Assert()
+	})
+}

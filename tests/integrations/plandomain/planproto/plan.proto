@@ -11,6 +11,8 @@ message Command {
     CreatePlan createPlan = 2;
     ArchivePlan archivePlan = 3;
     UpdatePlan updatePlan = 4;
+    DrainPlan drainPlan = 5;
+    FailDrainPlan failDrainPlan = 6;
   }
 }
 
@@ -22,8 +24,20 @@ message Event {
     PlanUpdated planUpdated = 3;
     PlanArchived planArchived = 4;
     PlanDrained planDrained = 5;
-    PlanDrainingFailed planDrainingFailed = 6;
+    PlanDrainFailed planDrainFailed = 6;
   }
+}
+
+message FailDrainPlan {
+  string planId = 1;
+  string transferId = 2;
+  google.protobuf.Timestamp failedAt = 3;
+}
+
+message DrainPlan {
+  string planId = 1;
+  string transferId = 2;
+  google.protobuf.Timestamp drainedAt = 3;
 }
 
 message UpdatePlan {
@@ -91,7 +105,7 @@ message PlanDrained {
   google.protobuf.Timestamp drainedAt = 3;
 }
 
-message PlanDrainingFailed {
+message PlanDrainFailed {
   string planId = 1;
   string transferId = 2;
   google.protobuf.Timestamp failedAt = 4;

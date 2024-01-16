@@ -9,12 +9,15 @@ import (
 var ErrPlanExists = errors.New("plan already exists")
 var ErrPlanNotFound = errors.New("plan not found")
 var ErrPlanArchived = errors.New("plan already archived")
+var ErrPlanUnarchived = errors.New("plan must be archived")
+var ErrPlanDrained = errors.New("plan already drained")
 
 var Decider = onepiece.NewDecider(decide, evolve)
 
 type state struct {
 	planId     *string
 	isArchived bool
+	isDrained  bool
 }
 
 func decide(state state, command *planproto.Command) ([]*planproto.Event, error) {
@@ -87,18 +90,68 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 				},
 			},
 		}, nil
+	case *planproto.Command_DrainPlan:
+		if state.planId == nil {
+			return nil, ErrPlanNotFound
+		}
+		if state.isArchived == false {
+			return nil, ErrPlanUnarchived
+		}
+		if state.isDrained {
+			return nil, ErrPlanDrained
+		}
+
+		return []*planproto.Event{
+			{
+				Context: command.Context,
+				Event: &planproto.Event_PlanDrained{
+					PlanDrained: &planproto.PlanDrained{
+						PlanId:     c.DrainPlan.PlanId,
+						TransferId: c.DrainPlan.TransferId,
+						DrainedAt:  c.DrainPlan.DrainedAt,
+					},
+				},
+			},
+		}, nil
+	case *planproto.Command_FailDrainPlan:
+		if state.planId == nil {
+			return nil, ErrPlanNotFound
+		}
+		if state.isArchived == false {
+			return nil, ErrPlanUnarchived
+		}
+		if state.isDrained {
+			return nil, ErrPlanDrained
+		}
+
+		return []*planproto.Event{
+			{
+				Context: command.Context,
+				Event: &planproto.Event_PlanDrainFailed{
+					PlanDrainFailed: &planproto.PlanDrainFailed{
+						PlanId:     c.FailDrainPlan.PlanId,
+						TransferId: c.FailDrainPlan.TransferId,
+						FailedAt:   c.FailDrainPlan.FailedAt,
+					},
+				},
+			},
+		}, nil
+
 	default:
 		return nil, onepiece.ErrUnknownCommand
 	}
 }
 
 func evolve(state state, event *planproto.Event) state {
-	switch event.Event.(type) {
+	switch e := event.Event.(type) {
 	case *planproto.Event_PlanCreated:
-		state.planId = &event.GetPlanCreated().PlanId
+		state.planId = &e.PlanCreated.PlanId
 		return state
 	case *planproto.Event_PlanArchived:
 		state.isArchived = true
+		return state
+	case *planproto.Event_PlanDrained:
+		state.isDrained = true
 		return state
 	default:
 		return state
