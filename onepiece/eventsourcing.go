@@ -32,6 +32,8 @@ type ExpectedRevision = esdb.ExpectedRevision
 type CorrelationId string
 type CausationId string
 
+// CommandHandler is a function that receives a command and returns a list of events.
+// TODO: figure out how to avoid passing the db here. Take into consideration multi-tenancy.
 type CommandHandler[Command any, Event any] func(context context.Context, db *esdb.Client, command Command, opts *Options) (*Result[Event], error)
 
 type StreamId[Command any] func(command Command) (string, error)

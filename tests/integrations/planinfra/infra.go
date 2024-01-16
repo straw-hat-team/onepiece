@@ -10,7 +10,7 @@ import (
 const domain = "plan"
 const version = "v1"
 
-var SendCommand = onepiece.NewEventSourcingDecider(
+var DispatchCommand = onepiece.NewEventSourcingDecider(
 	plandomain.Decider,
 	streamID,
 	marshalEvent,

@@ -32,7 +32,7 @@ func main() {
 		DepositAccountId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 	}
 
-	result, err := planinfra.SendCommand(
+	result, err := planinfra.DispatchCommand(
 		context.Background(),
 		db,
 		&planproto.Command{
