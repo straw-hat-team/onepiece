@@ -5,8 +5,6 @@ package com.hmbradley.deposit.plan;
 import "google/protobuf/timestamp.proto";
 
 message Command {
-  map<string, string> context = 1;
-
   oneof command {
     CreatePlan createPlan = 2;
     ArchivePlan archivePlan = 3;
@@ -32,12 +30,14 @@ message FailDrainPlan {
   string planId = 1;
   string transferId = 2;
   google.protobuf.Timestamp failedAt = 3;
+  map<string, string> context = 4;
 }
 
 message DrainPlan {
   string planId = 1;
   string transferId = 2;
   google.protobuf.Timestamp drainedAt = 3;
+  map<string, string> context = 4;
 }
 
 message UpdatePlan {
@@ -48,12 +48,14 @@ message UpdatePlan {
   string description = 5;
   string icon = 6;
   google.protobuf.Timestamp updatedAt = 7;
+  map<string, string> context = 8;
 }
 
 message ArchivePlan {
   string planId = 1;
   string archivedBy = 2;
   google.protobuf.Timestamp archivedAt = 3;
+  map<string, string> context = 4;
 }
 
 message CreatePlan {
@@ -65,6 +67,7 @@ message CreatePlan {
   string icon = 6;
   google.protobuf.Timestamp createdAt = 7;
   string depositAccountId = 8;
+  map<string, string> context = 9;
 }
 
 message Amount {
