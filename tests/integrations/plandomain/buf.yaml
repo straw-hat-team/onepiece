@@ -1,7 +1,7 @@
 version: v1
 name: buf.build/straw-hat-llc/plans
 deps:
-  - buf.build/protocolbuffers/wellknowntypes:v3.0.2
+  - buf.build/protocolbuffers/wellknowntypes:v25.2
 breaking:
   use:
     - FILE

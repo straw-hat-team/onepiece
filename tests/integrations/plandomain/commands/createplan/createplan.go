@@ -10,12 +10,12 @@ var ErrPlanExists = errors.New("plan already exists")
 
 var Decider = onepiece.NewDecider(decide, evolve)
 
-type state struct {
-	planId *string
+type State struct {
+	PlanId *string
 }
 
-func decide(state state, command *planproto.CreatePlan) ([]*planproto.Event, error) {
-	if state.planId != nil {
+func decide(state State, command *planproto.CreatePlan) ([]*planproto.Event, error) {
+	if state.PlanId != nil {
 		return nil, ErrPlanExists
 	}
 
@@ -37,10 +37,10 @@ func decide(state state, command *planproto.CreatePlan) ([]*planproto.Event, err
 	}, nil
 }
 
-func evolve(state state, event *planproto.Event) state {
+func evolve(state State, event *planproto.Event) State {
 	switch e := event.Event.(type) {
 	case *planproto.Event_PlanCreated:
-		state.planId = &e.PlanCreated.PlanId
+		state.PlanId = &e.PlanCreated.PlanId
 		return state
 	default:
 		return state

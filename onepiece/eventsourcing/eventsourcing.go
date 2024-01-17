@@ -1,12 +1,12 @@
-package onepiece
+package eventsourcing
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
 	"github.com/gofrs/uuid"
+	"github.com/straw-hat-team/onepiece-go/onepiece"
 	"io"
 )
 
@@ -60,8 +60,8 @@ var (
 	maxReadSize = ^uint64(0)
 )
 
-func NewEventSourcingDecider[State any, Command any, Event any](
-	decider *Decider[State, Command, Event],
+func NewDecider[State any, Command any, Event any](
+	decider *onepiece.Decider[State, Command, Event],
 	getStreamId StreamId[Command],
 	marshalEvent MarshalEvent[Event],
 	unmarshalEvent UnmarshalEvent[Event],
@@ -113,7 +113,7 @@ func NewEventSourcingDecider[State any, Command any, Event any](
 		}
 
 		if decider.IsTerminal(state) {
-			return nil, ErrTerminalState
+			return nil, onepiece.ErrTerminalState
 		}
 
 		events, err := decider.Decide(state, command)
@@ -223,12 +223,4 @@ func NewCorrelationId() *CorrelationId {
 
 func Revision(value uint64) StreamRevision {
 	return esdb.Revision(value)
-}
-
-func EventType(domain string, version string, name string) string {
-	return fmt.Sprintf("%s.%s.%s", domain, version, name)
-}
-
-func StreamID(domain string, id string) string {
-	return fmt.Sprintf("%s.%s", domain, id)
 }

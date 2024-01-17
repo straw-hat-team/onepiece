@@ -3,26 +3,16 @@ package planinfra
 import (
 	"encoding/json"
 	"github.com/straw-hat-team/onepiece-go/onepiece"
+	"github.com/straw-hat-team/onepiece-go/onepiece/eventsourcing"
+	"github.com/straw-hat-team/onepiece-go/onepiece/protobuf"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/archiveplan"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/createplan"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/drainplan"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/faildrainplan"
-	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planactor"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 )
 
-const domain = "plan"
-const version = "v1"
-
-var DispatchCommand = onepiece.NewEventSourcingDecider(
-	planactor.Decider,
-	streamID,
-	marshalEvent,
-	unmarshalEvent,
-	eventTypeProvider,
-)
-
-var DispatchCreatePlan = onepiece.NewEventSourcingDecider(
+var DispatchCreatePlan = eventsourcing.NewDecider(
 	createplan.Decider,
 	createPlanStreamID,
 	marshalEvent,
@@ -30,7 +20,7 @@ var DispatchCreatePlan = onepiece.NewEventSourcingDecider(
 	eventTypeProvider,
 )
 
-var DispatchArchivePlan = onepiece.NewEventSourcingDecider(
+var DispatchArchivePlan = eventsourcing.NewDecider(
 	archiveplan.Decider,
 	archivePlanStreamID,
 	marshalEvent,
@@ -38,7 +28,7 @@ var DispatchArchivePlan = onepiece.NewEventSourcingDecider(
 	eventTypeProvider,
 )
 
-var DispatchDrainPlan = onepiece.NewEventSourcingDecider(
+var DispatchDrainPlan = eventsourcing.NewDecider(
 	drainplan.Decider,
 	drainPlanStreamID,
 	marshalEvent,
@@ -46,7 +36,7 @@ var DispatchDrainPlan = onepiece.NewEventSourcingDecider(
 	eventTypeProvider,
 )
 
-var DispatchFailDrainPlan = onepiece.NewEventSourcingDecider(
+var DispatchFailDrainPlan = eventsourcing.NewDecider(
 	faildrainplan.Decider,
 	failPlanStreamID,
 	marshalEvent,
@@ -54,35 +44,20 @@ var DispatchFailDrainPlan = onepiece.NewEventSourcingDecider(
 	eventTypeProvider,
 )
 
-func streamID(command *planproto.Command) (string, error) {
-	switch c := command.Command.(type) {
-	case *planproto.Command_CreatePlan:
-		return createPlanStreamID(c.CreatePlan)
-	case *planproto.Command_ArchivePlan:
-		return archivePlanStreamID(c.ArchivePlan)
-	case *planproto.Command_DrainPlan:
-		return drainPlanStreamID(c.DrainPlan)
-	case *planproto.Command_FailDrainPlan:
-		return failPlanStreamID(c.FailDrainPlan)
-	default:
-		return "", onepiece.ErrUnknownCommand
-	}
-}
-
 func failPlanStreamID(command *planproto.FailDrainPlan) (string, error) {
-	return onepiece.StreamID(domain, command.PlanId), nil
+	return protobuf.StreamID(command, command.PlanId), nil
 }
 
 func drainPlanStreamID(command *planproto.DrainPlan) (string, error) {
-	return onepiece.StreamID(domain, command.PlanId), nil
+	return protobuf.StreamID(command, command.PlanId), nil
 }
 
 func archivePlanStreamID(command *planproto.ArchivePlan) (string, error) {
-	return onepiece.StreamID(domain, command.PlanId), nil
+	return protobuf.StreamID(command, command.PlanId), nil
 }
 
 func createPlanStreamID(command *planproto.CreatePlan) (string, error) {
-	return onepiece.StreamID(domain, command.PlanId), nil
+	return protobuf.StreamID(command, command.PlanId), nil
 }
 
 func unmarshalEvent(eventType string, data []byte) (*planproto.Event, error) {
@@ -94,15 +69,21 @@ func unmarshalEvent(eventType string, data []byte) (*planproto.Event, error) {
 	return event, nil
 }
 
-func marshalEvent(event *planproto.Event) (onepiece.ContentType, []byte, error) {
+func marshalEvent(event *planproto.Event) (eventsourcing.ContentType, []byte, error) {
 	bytes, err := json.Marshal(event)
-	return onepiece.ContentTypeJson, bytes, err
+	return eventsourcing.ContentTypeJson, bytes, err
 }
 
 func eventTypeProvider(event *planproto.Event) (string, error) {
-	switch event.Event.(type) {
+	switch e := event.Event.(type) {
 	case *planproto.Event_PlanCreated:
-		return onepiece.EventType(domain, version, "plan-created"), nil
+		return protobuf.MessageFullName(e.PlanCreated).String(), nil
+	case *planproto.Event_PlanArchived:
+		return protobuf.MessageFullName(e.PlanArchived).String(), nil
+	case *planproto.Event_PlanDrained:
+		return protobuf.MessageFullName(e.PlanDrained).String(), nil
+	case *planproto.Event_PlanDrainFailed:
+		return protobuf.MessageFullName(e.PlanDrainFailed).String(), nil
 	default:
 		return "", onepiece.ErrUnknownEvent
 	}

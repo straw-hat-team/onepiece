@@ -11,16 +11,16 @@ var ErrPlanArchived = errors.New("plan already archived")
 
 var Decider = onepiece.NewDecider(decide, evolve)
 
-type state struct {
-	planId     *string
-	isArchived bool
+type State struct {
+	PlanId     *string
+	IsArchived bool
 }
 
-func decide(state state, command *planproto.UpdatePlan) ([]*planproto.Event, error) {
-	if state.planId == nil {
+func decide(state State, command *planproto.UpdatePlan) ([]*planproto.Event, error) {
+	if state.PlanId == nil {
 		return nil, ErrPlanNotFound
 	}
-	if state.isArchived {
+	if state.IsArchived {
 		return nil, ErrPlanArchived
 	}
 
@@ -41,13 +41,13 @@ func decide(state state, command *planproto.UpdatePlan) ([]*planproto.Event, err
 	}, nil
 }
 
-func evolve(state state, event *planproto.Event) state {
+func evolve(state State, event *planproto.Event) State {
 	switch e := event.Event.(type) {
 	case *planproto.Event_PlanCreated:
-		state.planId = &e.PlanCreated.PlanId
+		state.PlanId = &e.PlanCreated.PlanId
 		return state
 	case *planproto.Event_PlanArchived:
-		state.isArchived = true
+		state.IsArchived = true
 		return state
 	default:
 		return state

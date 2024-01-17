@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
 	"github.com/gofrs/uuid"
-	"github.com/straw-hat-team/onepiece-go/onepiece"
+	"github.com/straw-hat-team/onepiece-go/onepiece/eventsourcing"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/planinfra"
 )
@@ -38,11 +38,11 @@ func main() {
 		&planproto.Command{
 			Command: &planproto.Command_CreatePlan{CreatePlan: command},
 		},
-		&onepiece.Options{
-			ExpectedRevision: onepiece.Revision(0),
+		&eventsourcing.Options{
+			ExpectedRevision: eventsourcing.Any{},
 			Metadata:         nil,
-			CorrelationId:    onepiece.NewCorrelationId(),
-			CausationId:      onepiece.NewCausationId(),
+			CorrelationId:    eventsourcing.NewCorrelationId(),
+			CausationId:      eventsourcing.NewCausationId(),
 		},
 	)
 	if err != nil {
