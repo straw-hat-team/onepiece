@@ -29,7 +29,6 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 
 		return []*planproto.Event{
 			{
-				Context: c.CreatePlan.Context,
 				Event: &planproto.Event_PlanCreated{
 					PlanCreated: &planproto.PlanCreated{
 						PlanId:           c.CreatePlan.PlanId,
@@ -55,7 +54,6 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 
 		return []*planproto.Event{
 			{
-				Context: c.ArchivePlan.Context,
 				Event: &planproto.Event_PlanArchived{
 					PlanArchived: &planproto.PlanArchived{
 						PlanId:     c.ArchivePlan.PlanId,
@@ -76,7 +74,6 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 
 		return []*planproto.Event{
 			{
-				Context: c.UpdatePlan.Context,
 				Event: &planproto.Event_PlanUpdated{
 					PlanUpdated: &planproto.PlanUpdated{
 						PlanId:      c.UpdatePlan.PlanId,
@@ -103,7 +100,6 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 
 		return []*planproto.Event{
 			{
-				Context: c.DrainPlan.Context,
 				Event: &planproto.Event_PlanDrained{
 					PlanDrained: &planproto.PlanDrained{
 						PlanId:     c.DrainPlan.PlanId,
@@ -126,7 +122,6 @@ func decide(state state, command *planproto.Command) ([]*planproto.Event, error)
 
 		return []*planproto.Event{
 			{
-				Context: c.FailDrainPlan.Context,
 				Event: &planproto.Event_PlanDrainFailed{
 					PlanDrainFailed: &planproto.PlanDrainFailed{
 						PlanId:     c.FailDrainPlan.PlanId,

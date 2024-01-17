@@ -1,0 +1,19 @@
+{
+  "Event": {
+    "PlanCreated": {
+      "planId": "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
+      "title": "Vacation",
+      "color": "#FF0000",
+      "goalAmount": {
+        "amount": 1000,
+        "denomination": "USD"
+      },
+      "description": "Plan for a vacation",
+      "icon": "https://some-url.com/icon.png",
+      "createdAt": {
+        "seconds": 743326200
+      },
+      "depositAccountId": "583448c0-696f-4ce5-a4c0-785a3b5c1603"
+    }
+  }
+}

@@ -3,7 +3,11 @@ package planinfra
 import (
 	"encoding/json"
 	"github.com/straw-hat-team/onepiece-go/onepiece"
-	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/archiveplan"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/createplan"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/drainplan"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/commands/faildrainplan"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planactor"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 )
 
@@ -11,8 +15,40 @@ const domain = "plan"
 const version = "v1"
 
 var DispatchCommand = onepiece.NewEventSourcingDecider(
-	plandomain.Decider,
+	planactor.Decider,
 	streamID,
+	marshalEvent,
+	unmarshalEvent,
+	eventTypeProvider,
+)
+
+var DispatchCreatePlan = onepiece.NewEventSourcingDecider(
+	createplan.Decider,
+	createPlanStreamID,
+	marshalEvent,
+	unmarshalEvent,
+	eventTypeProvider,
+)
+
+var DispatchArchivePlan = onepiece.NewEventSourcingDecider(
+	archiveplan.Decider,
+	archivePlanStreamID,
+	marshalEvent,
+	unmarshalEvent,
+	eventTypeProvider,
+)
+
+var DispatchDrainPlan = onepiece.NewEventSourcingDecider(
+	drainplan.Decider,
+	drainPlanStreamID,
+	marshalEvent,
+	unmarshalEvent,
+	eventTypeProvider,
+)
+
+var DispatchFailDrainPlan = onepiece.NewEventSourcingDecider(
+	faildrainplan.Decider,
+	failPlanStreamID,
 	marshalEvent,
 	unmarshalEvent,
 	eventTypeProvider,
@@ -21,10 +57,32 @@ var DispatchCommand = onepiece.NewEventSourcingDecider(
 func streamID(command *planproto.Command) (string, error) {
 	switch c := command.Command.(type) {
 	case *planproto.Command_CreatePlan:
-		return onepiece.StreamID(domain, c.CreatePlan.PlanId), nil
+		return createPlanStreamID(c.CreatePlan)
+	case *planproto.Command_ArchivePlan:
+		return archivePlanStreamID(c.ArchivePlan)
+	case *planproto.Command_DrainPlan:
+		return drainPlanStreamID(c.DrainPlan)
+	case *planproto.Command_FailDrainPlan:
+		return failPlanStreamID(c.FailDrainPlan)
 	default:
 		return "", onepiece.ErrUnknownCommand
 	}
+}
+
+func failPlanStreamID(command *planproto.FailDrainPlan) (string, error) {
+	return onepiece.StreamID(domain, command.PlanId), nil
+}
+
+func drainPlanStreamID(command *planproto.DrainPlan) (string, error) {
+	return onepiece.StreamID(domain, command.PlanId), nil
+}
+
+func archivePlanStreamID(command *planproto.ArchivePlan) (string, error) {
+	return onepiece.StreamID(domain, command.PlanId), nil
+}
+
+func createPlanStreamID(command *planproto.CreatePlan) (string, error) {
+	return onepiece.StreamID(domain, command.PlanId), nil
 }
 
 func unmarshalEvent(eventType string, data []byte) (*planproto.Event, error) {
