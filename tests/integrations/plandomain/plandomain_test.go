@@ -2,7 +2,7 @@ package plandomain_test
 
 import (
 	"github.com/straw-hat-team/onepiece-go/onepiece/onepiecetesting"
-	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain"
+	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planactor"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"testing"
@@ -11,7 +11,7 @@ import (
 
 func TestCreatePLan(t *testing.T) {
 	t.Run("creates a plan", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			When(&planproto.Command{Command: &planproto.Command_CreatePlan{CreatePlan: &planproto.CreatePlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 				Title:  "Vacation",
@@ -42,30 +42,30 @@ func TestCreatePLan(t *testing.T) {
 	})
 
 	t.Run("fails to create a plan if the plan already exists", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
 			When(&planproto.Command{Command: &planproto.Command_CreatePlan{CreatePlan: &planproto.CreatePlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
-			Catch(plandomain.ErrPlanExists).
+			Catch(planactor.ErrPlanExists).
 			Assert()
 	})
 }
 
 func TestArchivePlan(t *testing.T) {
 	t.Run("fails to archive a plan if the plan does not exist", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			When(&planproto.Command{Command: &planproto.Command_ArchivePlan{ArchivePlan: &planproto.ArchivePlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
-			Catch(plandomain.ErrPlanNotFound).
+			Catch(planactor.ErrPlanNotFound).
 			Assert()
 	})
 
 	t.Run("fails to archive a plan if the plan is already archived", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(
 				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
@@ -76,11 +76,11 @@ func TestArchivePlan(t *testing.T) {
 			).
 			When(&planproto.Command{Command: &planproto.Command_ArchivePlan{ArchivePlan: &planproto.ArchivePlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
-			}}}).Catch(plandomain.ErrPlanArchived).Assert()
+			}}}).Catch(planactor.ErrPlanArchived).Assert()
 	})
 
 	t.Run("archives a plan", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
@@ -99,16 +99,16 @@ func TestArchivePlan(t *testing.T) {
 
 func TestUpdatePlan(t *testing.T) {
 	t.Run("fails to update a plan if the plan does not exist", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			When(&planproto.Command{Command: &planproto.Command_UpdatePlan{UpdatePlan: &planproto.UpdatePlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
-			Catch(plandomain.ErrPlanNotFound).
+			Catch(planactor.ErrPlanNotFound).
 			Assert()
 	})
 
 	t.Run("updates a plan", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
@@ -141,16 +141,16 @@ func TestUpdatePlan(t *testing.T) {
 
 func TestDrainPlan(t *testing.T) {
 	t.Run("fails to drain a plan if the plan does not exist", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			When(&planproto.Command{Command: &planproto.Command_DrainPlan{DrainPlan: &planproto.DrainPlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
-			Catch(plandomain.ErrPlanNotFound).
+			Catch(planactor.ErrPlanNotFound).
 			Assert()
 	})
 
 	t.Run("drains a plan", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}},
@@ -171,7 +171,7 @@ func TestDrainPlan(t *testing.T) {
 	})
 
 	t.Run("fails to drain a plan if the plan is already drained", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(
 				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
@@ -184,11 +184,11 @@ func TestDrainPlan(t *testing.T) {
 				}}}).
 			When(&planproto.Command{Command: &planproto.Command_DrainPlan{DrainPlan: &planproto.DrainPlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
-			}}}).Catch(plandomain.ErrPlanDrained).Assert()
+			}}}).Catch(planactor.ErrPlanDrained).Assert()
 	})
 
 	t.Run("fails to drain a plan if the plan is not archived", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(
 				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
@@ -198,13 +198,13 @@ func TestDrainPlan(t *testing.T) {
 				}}}).
 			When(&planproto.Command{Command: &planproto.Command_DrainPlan{DrainPlan: &planproto.DrainPlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
-			}}}).Catch(plandomain.ErrPlanUnarchived).Assert()
+			}}}).Catch(planactor.ErrPlanUnarchived).Assert()
 	})
 }
 
 func TestFailDrainPlan(t *testing.T) {
 	t.Run("successfully fail drain a plan", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(
 				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
@@ -224,27 +224,27 @@ func TestFailDrainPlan(t *testing.T) {
 	})
 
 	t.Run("fails to fail drain a plan if the plan does not exist", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			When(&planproto.Command{Command: &planproto.Command_FailDrainPlan{FailDrainPlan: &planproto.FailDrainPlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 			}}}).
-			Catch(plandomain.ErrPlanNotFound).
+			Catch(planactor.ErrPlanNotFound).
 			Assert()
 	})
 
 	t.Run("fails to fail drain a plan if the plan is not archived", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(
 				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
 				}}}).
 			When(&planproto.Command{Command: &planproto.Command_FailDrainPlan{FailDrainPlan: &planproto.FailDrainPlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
-			}}}).Catch(plandomain.ErrPlanUnarchived).Assert()
+			}}}).Catch(planactor.ErrPlanUnarchived).Assert()
 	})
 
 	t.Run("fails to fail drain a plan if the plan is drained already", func(t *testing.T) {
-		onepiecetesting.NewTestCase(t, plandomain.Decider).
+		onepiecetesting.NewTestCase(t, planactor.Decider).
 			Given(
 				&planproto.Event{Event: &planproto.Event_PlanCreated{PlanCreated: &planproto.PlanCreated{
 					PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
@@ -257,6 +257,6 @@ func TestFailDrainPlan(t *testing.T) {
 				}}}).
 			When(&planproto.Command{Command: &planproto.Command_FailDrainPlan{FailDrainPlan: &planproto.FailDrainPlan{
 				PlanId: "d83a3744-0e53-4fb7-88f7-7ffc831f0090",
-			}}}).Catch(plandomain.ErrPlanDrained).Assert()
+			}}}).Catch(planactor.ErrPlanDrained).Assert()
 	})
 }

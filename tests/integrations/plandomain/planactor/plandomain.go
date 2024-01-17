@@ -1,4 +1,4 @@
-package plandomain
+package planactor
 
 import (
 	"errors"
