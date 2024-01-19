@@ -12,7 +12,6 @@ import (
 
 type Result[Event any] struct {
 	NextExpectedVersion uint64
-	CommitPosition      uint64
 	Events              []Event
 }
 
@@ -161,7 +160,6 @@ func NewDecider[State any, Command any, Event any](
 		return &Result[Event]{
 			Events:              events,
 			NextExpectedVersion: writeResult.NextExpectedVersion,
-			CommitPosition:      writeResult.CommitPosition,
 		}, nil
 	}
 }

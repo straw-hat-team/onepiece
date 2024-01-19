@@ -37,10 +37,6 @@ func decide(state State, command *planproto.ArchivePlan) ([]*planproto.Event, er
 	}, nil
 }
 
-// WIT Variants
-// Today Compose, Top level, two components, call fast, type switching between langs*
-// Future, memcopy if same lang*,
-
 func evolve(state State, event *planproto.Event) State {
 	switch e := event.Event.(type) {
 	case *planproto.Event_PlanCreated:
