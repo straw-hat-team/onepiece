@@ -12,16 +12,38 @@ fn get_stream_id(command: &monitoring::Command) -> String {
 }
 
 fn marshal_event(event: &monitoring::Event) -> Result<Bytes, serde_json::Error> {
-  serde_json::to_vec(&event).map(Bytes::from)
+  match event {
+    monitoring::Event::MonitoringStarted(e) => {
+      serde_json::to_vec(e).map(Bytes::from)
+    }
+    monitoring::Event::MonitoringPaused(e) => {
+      serde_json::to_vec(e).map(Bytes::from)
+    }
+    monitoring::Event::MonitoringResumed(e) => {
+      serde_json::to_vec(e).map(Bytes::from)
+    }
+  }
 }
 
 fn unmarshal_event(event_type: &str, data: Bytes) -> Result<monitoring::Event, MarshalError<serde_json::Error>> {
   match event_type {
-    "MonitoringStarted" | "MonitoringPaused" | "MonitoringResumed" => {
-      return match serde_json::from_slice(&data) {
-        Ok(event) => Ok(event),
+    "MonitoringStarted" => {
+      match serde_json::from_slice(&data) {
+        Ok(event) => Ok(monitoring::Event::MonitoringStarted(event)),
         Err(err) => Err(MarshalError::UnmarshalEvent(err)),
-      };
+      }
+    }
+    "MonitoringPaused" => {
+      match serde_json::from_slice(&data) {
+        Ok(event) => Ok(monitoring::Event::MonitoringPaused(event)),
+        Err(err) => Err(MarshalError::UnmarshalEvent(err)),
+      }
+    }
+    "MonitoringResumed" => {
+      match serde_json::from_slice(&data) {
+        Ok(event) => Ok(monitoring::Event::MonitoringResumed(event)),
+        Err(err) => Err(MarshalError::UnmarshalEvent(err)),
+      }
     }
     _ => Err(MarshalError::UnknownEventType),
   }
