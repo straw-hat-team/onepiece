@@ -61,14 +61,14 @@ pub fn initial_state() -> Monitoring {
 
 pub fn is_terminal(_aggregate: &Monitoring) -> bool { false }
 
-pub fn decide(aggregate: &Monitoring, command: Command) -> Result<Vec<Event>, Error> {
+pub fn decide(aggregate: &Monitoring, command: &Command) -> Result<Vec<Event>, Error> {
   match command {
     Command::CreateMonitoring(CreateMonitoring { id, url }) => {
       if aggregate.id.is_some() {
         return Err(Error::AlreadyExists);
       }
 
-      let event = Event::MonitoringStarted { id, url };
+      let event = Event::MonitoringStarted { id: id.to_string(), url: url.to_string() };
       Ok(vec![event])
     }
     Command::PauseMonitoring(PauseMonitoring { id }) => {
@@ -76,7 +76,7 @@ pub fn decide(aggregate: &Monitoring, command: Command) -> Result<Vec<Event>, Er
         return Err(Error::NotFound);
       }
 
-      let event = Event::MonitoringPaused { id };
+      let event = Event::MonitoringPaused { id: id.to_string() };
       Ok(vec![event])
     }
     Command::ResumeMonitoring(ResumeMonitoring { id }) => {
@@ -84,16 +84,16 @@ pub fn decide(aggregate: &Monitoring, command: Command) -> Result<Vec<Event>, Er
         return Err(Error::NotFound);
       }
 
-      let event = Event::MonitoringResumed { id };
+      let event = Event::MonitoringResumed { id: id.to_string() };
       Ok(vec![event])
     }
   }
 }
 
-pub fn evolve(aggregate: &Monitoring, event: Event) -> Monitoring {
+pub fn evolve(aggregate: &Monitoring, event: &Event) -> Monitoring {
   match event {
     Event::MonitoringStarted { id, .. } => {
-      Monitoring { id: Some(id), status: Status::Running }
+      Monitoring { id: Some(id.to_string()), status: Status::Running }
     }
     Event::MonitoringPaused { .. } => {
       Monitoring { status: Status::Paused, id: aggregate.id.clone() }
@@ -121,7 +121,7 @@ mod tests {
 
     testing::Spec::new(monitoring)
       .given(vec![])
-      .when(Command::CreateMonitoring(CreateMonitoring {
+      .when(&Command::CreateMonitoring(CreateMonitoring {
         id: String::from("1"),
         url: String::from("https://example.com"),
       })

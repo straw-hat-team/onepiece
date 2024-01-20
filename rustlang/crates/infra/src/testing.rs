@@ -7,13 +7,13 @@ pub enum SpecResult<Event, Error> {
   Error{ error: Error },
 }
 
-pub struct Spec<Aggregate, Command, Event, Error> {
+pub struct Spec<'a, Aggregate, Command, Event, Error> {
   decider: Decider<Aggregate, Command, Event, Error>,
-  given: Vec<Event>,
-  when: Option<Command>
+  given: Vec<&'a Event>,
+  when: Option<&'a Command>
 }
 
-impl<Aggregate, Command, Event, Error> Spec<Aggregate, Command, Event, Error>
+impl<'a, Aggregate, Command, Event, Error> Spec<'a, Aggregate, Command, Event, Error>
   where
     Aggregate: PartialEq + Debug,
     Event: PartialEq + Debug,
@@ -27,12 +27,12 @@ impl<Aggregate, Command, Event, Error> Spec<Aggregate, Command, Event, Error>
     }
   }
 
-  pub fn given(mut self, events: Vec<Event>) -> Self {
+  pub fn given(mut self, events: Vec<&'a Event>) -> Self {
     self.given = events;
     self
   }
 
-  pub fn when(mut self, command: Command) -> Self {
+  pub fn when(mut self, command: &'a Command) -> Self {
     self.when = Some(command);
     self
   }

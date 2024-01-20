@@ -615,6 +615,8 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "eventstore",
+ "serde",
+ "serde_json",
  "uuid",
 ]
 

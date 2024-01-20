@@ -4,8 +4,8 @@ use std::cmp::PartialEq;
 
 pub type InitialState<State> = fn() -> State;
 pub type IsTerminal<State> = fn(state: &State) -> bool;
-pub type Decide<State, Command, Event, Error> = fn(state: &State, command: Command) -> Result<Vec<Event>, Error>;
-pub type Evolve<State, Event> = fn(state: &State, event: Event) -> State;
+pub type Decide<State, Command, Event, Error> = fn(state: &State, command: &Command) -> Result<Vec<Event>, Error>;
+pub type Evolve<State, Event> = fn(state: &State, event: &Event) -> State;
 
 pub struct Decider<State, Command, Event, Error> {
   initial_state: InitialState<State>,
@@ -38,11 +38,11 @@ impl<State, Command, Event, Error> Decider<State, Command, Event, Error>
     (self.initial_state)()
   }
 
-  pub fn decide(&self, state: &State, command: Command) -> Result<Vec<Event>, Error> {
+  pub fn decide(&self, state: &State, command: &Command) -> Result<Vec<Event>, Error> {
     (self.decide)(state, command)
   }
 
-  pub fn evolve(&self, state: &State, event: Event) -> State {
+  pub fn evolve(&self, state: &State, event: &Event) -> State {
     (self.evolve)(state, event)
   }
 
