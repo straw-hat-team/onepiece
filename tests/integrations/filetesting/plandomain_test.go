@@ -2,7 +2,7 @@ package filetesting_test
 
 import (
 	"github.com/straw-hat-team/onepiece-go/onepiece"
-	"github.com/straw-hat-team/onepiece-go/onepiece/onepiecetesting"
+	"github.com/straw-hat-team/onepiece-go/onepiece/eventsourcing/onepiecetesting"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planactor"
 	"github.com/straw-hat-team/onepiece-go/tests/integrations/plandomain/planproto"
 	"gopkg.in/yaml.v3"
