@@ -2,5 +2,7 @@
 resolver = "2"
 members = [
   "crates/infra",
-  "crates/monitoring"
-, "crates/runtime"]
+  "crates/monitoring",
+  "crates/monitoring-wasm",
+  "crates/runtime"
+]

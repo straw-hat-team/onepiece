@@ -1,89 +1,185 @@
-use bytes::Bytes;
-use infra::decider::Decider;
-use eventstore::{Client};
-use infra::eventsourcing::{DecisionResult, Options, EventSourcingDecider, CommandHandlerError, MarshalError};
+use wasmtime::component::*;
+use wasmtime::{Config, Engine, Store, Caller, Module};
 
-fn get_stream_id(command: &monitoring::Command) -> String {
-  match command {
-    monitoring::Command::CreateMonitoring(command) => format!("monitoring:{}", command.id),
-    monitoring::Command::PauseMonitoring(command) => format!("monitoring:{}", command.id),
-    monitoring::Command::ResumeMonitoring(command) => format!("monitoring:{}", command.id),
+
+bindgen!();
+
+struct MyState {
+  name: String,
+}
+
+// Imports into the world, like the `name` import for this world, are satisfied
+// through traits.
+impl HelloWorldImports for MyState {
+  // Note the `Result` return value here where `Ok` is returned back to
+  // the component and `Err` will raise a trap.
+  fn name(&mut self) -> wasmtime::Result<String> {
+    Ok(self.name.clone())
   }
 }
 
-fn marshal_event(event: &monitoring::Event) -> Result<Bytes, serde_json::Error> {
-  match event {
-    monitoring::Event::MonitoringStarted(e) => {
-      serde_json::to_vec(e).map(Bytes::from)
-    }
-    monitoring::Event::MonitoringPaused(e) => {
-      serde_json::to_vec(e).map(Bytes::from)
-    }
-    monitoring::Event::MonitoringResumed(e) => {
-      serde_json::to_vec(e).map(Bytes::from)
-    }
-  }
-}
+fn main() -> wasmtime::Result<()> {
+  // Configure an `Engine` and compile the `Component` that is being run for
+  // the application.
+  let mut config = Config::new();
+  config.wasm_component_model(true);
+  let engine = Engine::new(&config)?;
+  let component = Component::from_file(&engine, "./your-component.wasm")?;
 
-fn unmarshal_event(event_type: &str, data: Bytes) -> Result<monitoring::Event, MarshalError<serde_json::Error>> {
-  match event_type {
-    "MonitoringStarted" => {
-      match serde_json::from_slice(&data) {
-        Ok(event) => Ok(monitoring::Event::MonitoringStarted(event)),
-        Err(err) => Err(MarshalError::UnmarshalEvent(err)),
-      }
-    }
-    "MonitoringPaused" => {
-      match serde_json::from_slice(&data) {
-        Ok(event) => Ok(monitoring::Event::MonitoringPaused(event)),
-        Err(err) => Err(MarshalError::UnmarshalEvent(err)),
-      }
-    }
-    "MonitoringResumed" => {
-      match serde_json::from_slice(&data) {
-        Ok(event) => Ok(monitoring::Event::MonitoringResumed(event)),
-        Err(err) => Err(MarshalError::UnmarshalEvent(err)),
-      }
-    }
-    _ => Err(MarshalError::UnknownEventType),
-  }
-}
+  // Instantiation of bindings always happens through a `Linker`.
+  // Configuration of the linker is done through a generated `add_to_linker`
+  // method on the bindings structure.
+  //
+  // Note that the closure provided here is a projection from `T` in
+  // `Store<T>` to `&mut U` where `U` implements the `HelloWorldImports`
+  // trait. In this case the `T`, `MyState`, is stored directly in the
+  // structure so no projection is necessary here.
+  let mut linker = Linker::new(&engine);
+  HelloWorld::add_to_linker(&mut linker, |state: &mut MyState| state)?;
 
-fn event_type(event: &monitoring::Event) -> &str {
-  match event {
-    monitoring::Event::MonitoringStarted { .. } => "MonitoringStarted",
-    monitoring::Event::MonitoringPaused { .. } => "MonitoringPaused",
-    monitoring::Event::MonitoringResumed { .. } => "MonitoringResumed",
-  }
-}
-
-async fn run(opts: Option<Options>) -> Result<DecisionResult<monitoring::Event>, CommandHandlerError<monitoring::Error, serde_json::Error>> {
-  let settings = "esdb://127.0.0.1:2113?tls=false&keepAliveTimeout=10000&keepAliveInterval=10000".parse().unwrap();
-  let client = Client::new(settings).unwrap();
-  let command = monitoring::Command::CreateMonitoring(monitoring::CreateMonitoring {
-    id: uuid::Uuid::new_v4().to_string(),
-    url: "https://www.google.com".to_string(),
-  });
-
-  let command_handler = EventSourcingDecider::new(
-    Decider::new(
-      monitoring::decide,
-      monitoring::evolve,
-      monitoring::initial_state,
-      Some(monitoring::is_terminal),
-    ),
-    event_type,
-    get_stream_id,
-    unmarshal_event,
-    marshal_event,
+  // As with the core wasm API of Wasmtime instantiation occurs within a
+  // `Store`. The bindings structure contains an `instantiate` method which
+  // takes the store, component, and linker. This returns the `bindings`
+  // structure which is an instance of `HelloWorld` and supports typed access
+  // to the exports of the component.
+  let mut store = Store::new(
+    &engine,
+    MyState {
+      name: "me".to_string(),
+    },
   );
+  let (bindings, _) = HelloWorld::instantiate(&mut store, &component, &linker)?;
 
-  return command_handler.dispatch_command(client, &command, opts).await;
-}
-
-#[tokio::main]
-async fn main() -> Result<(), CommandHandlerError<monitoring::Error, serde_json::Error>> {
-  let result = run(None).await?;
-  println!("{:?}", result);
+  // Here our `greet` function doesn't take any parameters for the component,
+  // but in the Wasmtime embedding API the first argument is always a `Store`.
+  bindings.call_greet(&mut store)?;
   Ok(())
 }
+
+
+// #[tokio::main]
+// async fn main() {
+//   // let mut config = wasmtime::Config::new();
+//   // config.async_support(true).wasm_component_model(true);
+//   // let engine = Engine::new(&config)?;
+//   // let component = Component::from_file(&engine, &file)?;
+//   // let mut linker = Linker::new(&engine);
+//   // let mut store = Store::new(&engine, 4);
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//   // Modules can be compiled through either the text or binary format
+//   // let engine = Engine::default();
+//   // let wat = r#"
+//   //       (module
+//   //           (import "host" "host_func" (func $host_hello (param i32)))
+//   //
+//   //           (func (export "hello")
+//   //               i32.const 3
+//   //               call $host_hello)
+//   //       )
+//   //   "#;
+//   // let module = Module::new(&engine, wat).unwrap();
+//   //
+//   // // All wasm objects operate within the context of a "store". Each
+//   // // `Store` has a type parameter to store host-specific data, which in
+//   // // this case we're using `4` for.
+//   // let mut store = Store::new(&engine, 4);
+//   // let host_func = wasmtime::Func::wrap(&mut store, |caller: Caller<'_, u32>, param: i32| {
+//   //   println!("Got {} from WebAssembly", param);
+//   //   println!("my host state is: {}", caller.data());
+//   // });
+//   //
+//   // // Instantiation of a module requires specifying its imports and then
+//   // // afterwards we can fetch exports by name, as well as asserting the
+//   // // type signature of the function with `get_typed_func`.
+//   // let instance = wasmtime::Instance::new(&mut store, &module, &[host_func.into()]).unwrap();
+//   // let hello = instance.get_typed_func::<(), ()>(&mut store, "hello").unwrap();
+//   //
+//   // // And finally we can call the wasm!
+//   // hello.call(&mut store, ()).unwrap();
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//   // Configure an `Engine` and compile the `Component` that is being run for
+//   // the application.
+//   let mut config = Config::new();
+//   config.wasm_component_model(true);
+//   let engine = Engine::new(&config)?;
+//   let component = Component::from_file(&engine, "./your-component.wasm")?;
+//
+//   // Instantiation of bindings always happens through a `Linker`.
+//   // Configuration of the linker is done through a generated `add_to_linker`
+//   // method on the bindings structure.
+//   //
+//   // Note that the closure provided here is a projection from `T` in
+//   // `Store<T>` to `&mut U` where `U` implements the `HelloWorldImports`
+//   // trait. In this case the `T`, `MyState`, is stored directly in the
+//   // structure so no projection is necessary here.
+//   let mut linker = Linker::new(&engine);
+//   HelloWorld::add_to_linker(&mut linker, |state: &mut MyState| state)?;
+//
+//   // As with the core wasm API of Wasmtime instantiation occurs within a
+//   // `Store`. The bindings structure contains an `instantiate` method which
+//   // takes the store, component, and linker. This returns the `bindings`
+//   // structure which is an instance of `HelloWorld` and supports typed access
+//   // to the exports of the component.
+//   let mut store = Store::new(
+//     &engine,
+//     MyState {
+//       name: "me".to_string(),
+//     },
+//   );
+//   let (bindings, _) = HelloWorld::instantiate(&mut store, &component, &linker)?;
+//
+//   // Here our `greet` function doesn't take any parameters for the component,
+//   // but in the Wasmtime embedding API the first argument is always a `Store`.
+//   bindings.call_greet(&mut store)?;
+//   Ok(())
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//   //
+//   // let result = run(None).await?;
+//   // println!("{:?}", result);
+//   // Ok(())
+// }
