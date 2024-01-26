@@ -1,10 +1,10 @@
 package planinfra
 
 import (
-	"encoding/json"
 	"github.com/straw-hat-team/onepiece/go/onepiece"
 	"github.com/straw-hat-team/onepiece/go/onepiece/eventsourcing"
 	"github.com/straw-hat-team/onepiece/go/onepiece/protobuf"
+	"google.golang.org/protobuf/encoding/protojson"
 	"unstable/plandomain/commands/archiveplan"
 	"unstable/plandomain/commands/createplan"
 	"unstable/plandomain/commands/drainplan"
@@ -62,16 +62,19 @@ func createPlanStreamID(command *planproto.CreatePlan) (string, error) {
 
 func unmarshalEvent(eventType string, data []byte) (*planproto.Event, error) {
 	event := &planproto.Event{}
-	err := json.Unmarshal(data, event)
+
+	err := protojson.Unmarshal(data, event)
 	if err != nil {
 		return nil, err
 	}
+
 	return event, nil
 }
 
 func marshalEvent(event *planproto.Event) (eventsourcing.ContentType, []byte, error) {
-	bytes, err := json.Marshal(event)
-	return eventsourcing.ContentTypeJson, bytes, err
+	b, err := protojson.Marshal(event)
+
+	return eventsourcing.ContentTypeJson, b, err
 }
 
 func eventTypeProvider(event *planproto.Event) (string, error) {
