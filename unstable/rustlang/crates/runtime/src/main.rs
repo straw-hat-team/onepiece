@@ -1,4 +1,12 @@
+use eventstore::Client;
+use infra::wasmeventsourcing::WasmEventSourcingDecider;
+
 fn main() {
+    let settings = "esdb://127.0.0.1:2113?tls=false&keepAliveTimeout=10000&keepAliveInterval=10000"
+        .parse()
+        .unwrap();
+    let client = Client::new(settings).unwrap();
+
     let file_path = std::env::current_dir()
         .unwrap()
         .join("target/wasm32-unknown-unknown/debug/monitoring_wasm.wasm");
@@ -6,6 +14,21 @@ fn main() {
     let url = extism::Wasm::file(file_path.as_path());
     let manifest = extism::Manifest::new([url]);
     let mut plugin = extism::Plugin::new(&manifest, [], true).unwrap();
+
+    let mut decider = WasmEventSourcingDecider::new(&mut plugin);
+
+    let result = decider.dispatch_command(
+        client,
+        serde_json::json!({
+          "CreateMonitoring": {"id": "1", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+        })
+        .to_string()
+        .as_bytes()
+        .to_vec(),
+        None,
+    )?;
+
+    println!("result: {:?}", result);
 
     let input = r#"
         {
