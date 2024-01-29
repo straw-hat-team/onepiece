@@ -1,5 +1,5 @@
 use extism_pdk::*;
-
+use anyhow::anyhow;
 
 #[plugin_fn]
 pub fn stream_id(Json(command): Json<monitoring::Command>) -> FnResult<String> {
@@ -54,14 +54,43 @@ pub fn marshal_event(Json(event): Json<monitoring::Event>) -> FnResult<Vec<u8>> 
 #[derive(Debug, serde::Deserialize)]
 struct UnmarshalEventCommand {
     pub event_type: String,
-    pub payload: String
+    pub payload: String,
 }
 
 #[plugin_fn]
-pub fn unmarshal_event(Json(command): Json<UnmarshalEventCommand>) -> FnResult<Json<monitoring::Event>> {
+pub fn unmarshal_event(
+    Json(command): Json<UnmarshalEventCommand>,
+) -> FnResult<Json<monitoring::Event>> {
     debug!("unmarshal_event: {:?}", command);
     let u: monitoring::Event = serde_json::from_str(&command.payload.as_str())?;
     println!("{:#?}", u);
 
     Ok(Json(u))
+}
+
+#[derive(serde::Deserialize)]
+struct DecideCommand {
+    pub state: monitoring::State,
+    pub command: monitoring::Command,
+}
+
+#[plugin_fn]
+pub fn decide(Json(command): Json<DecideCommand>) -> FnResult<Json<Vec<monitoring::Event>>> {
+  match monitoring::decide(&command.state, &command.command) {
+    Ok(events) => {
+      Ok(Json(events))
+    }
+    Err(err) => {
+      Err(WithReturnCode::from(Error(err)))
+    }
+  }
+
+}
+
+struct Error(monitoring::Error);
+
+impl Into<extism_pdk::Error> for Error {
+  fn into(self) -> extism_pdk::Error {
+    return anyhow!("Missing attribute: {:?}", self.0)
+  }
 }

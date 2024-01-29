@@ -13,9 +13,9 @@ fn main() {
         }
       "#;
     let stream_id: String = plugin.call("stream_id", input).unwrap();
-    println!("{}", stream_id);
-    let state: String = plugin.call("initial_state", "").unwrap();
-    println!("{}", state);
+    println!("stream_id: {}", stream_id);
+    let initial_state: String = plugin.call("initial_state", "").unwrap();
+    println!("initial_state: {}", initial_state);
 
     let input = r#"
         {
@@ -25,14 +25,14 @@ fn main() {
           }
         }
       "#;
-    let state: String = plugin.call("evolve", input).unwrap();
-    println!("{}", state);
+    let evolve: String = plugin.call("evolve", input).unwrap();
+    println!("evolve: {}", evolve);
 
     let input = r#"
         {"id":null,"status":"Paused"}
       "#;
     let is_terminal: String = plugin.call("is_terminal", input).unwrap();
-    println!("{}", is_terminal);
+    println!("is_terminal: {}", is_terminal);
 
     let input = r#"
         {
@@ -40,7 +40,7 @@ fn main() {
           }
       "#;
     let event_type: String = plugin.call("event_type", input).unwrap();
-    println!("{}", event_type);
+    println!("event_type: {}", event_type);
 
     let marshal_event: String = plugin
         .call(
@@ -52,7 +52,7 @@ fn main() {
       "#,
         )
         .unwrap();
-    println!("{}", marshal_event);
+    println!("marshal_event: {}", marshal_event);
 
     let payload = serde_json::json!({
         "event_type": "MonitoringStarted",
@@ -63,5 +63,16 @@ fn main() {
     .to_string();
 
     let unmarshal_event: String = plugin.call("unmarshal_event", payload).unwrap();
-    println!("{}", unmarshal_event);
+    println!("unmarshal_event: {}", unmarshal_event);
+
+    let payload = serde_json::json!({
+        "state": serde_json::json!({"id":null,"status":"Paused"}),
+        "command": serde_json::json!({
+          "CreateMonitoring": {"id": "1", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+        })
+    })
+    .to_string();
+
+    let decide: String = plugin.call("decide", payload).unwrap();
+    println!("decide: {}", decide);
 }

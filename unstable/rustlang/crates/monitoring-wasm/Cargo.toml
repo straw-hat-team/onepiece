@@ -12,3 +12,4 @@ monitoring = { path = "../monitoring" }
 getrandom = { version = "0.2.12", features = ["js"] }
 serde = "1.0.192"
 serde_json = "1.0.108"
+anyhow = "1.0.79"
