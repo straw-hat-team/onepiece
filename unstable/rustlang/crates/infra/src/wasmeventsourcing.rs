@@ -14,7 +14,7 @@ impl WasmEventSourcingDecider<'_> {
     pub async fn dispatch_command(
         &mut self,
         client: eventstore::Client,
-        command: Vec<u8>,
+        command: String,
         opts: Option<Options>,
     ) -> anyhow::Result<DecisionResult> {
         let stream_id: String = self.plugin.call("stream_id", command.clone())?;
@@ -70,6 +70,13 @@ impl WasmEventSourcingDecider<'_> {
             return Err(anyhow::anyhow!("Stream is terminal"));
         }
 
+        let input = serde_json::json!({
+          "state": state,
+          "command": command,
+        })
+        .to_string();
+        println!("input: {}", input);
+
         let events: Json<Vec<String>> = self.plugin.call(
             "decide",
             serde_json::json!({
@@ -93,11 +100,11 @@ impl WasmEventSourcingDecider<'_> {
             opts.causation_id.unwrap_or_default().to_string(),
         );
 
-      let event_vec= events.into_inner();
+        let event_vec = events.into_inner();
         for event in event_vec.clone() {
             let event_type: String = self.plugin.call("event_type", event.clone())?;
             let data: String = self.plugin.call("marshal_event", &event)?;
-            let bdata= bytes::Bytes::from(data.clone());
+            let bdata = bytes::Bytes::from(data.clone());
             match eventstore::EventData::binary(event_type, bdata).metadata_as_json("{}") {
                 Ok(record_event) => {
                     record_events.push(record_event);

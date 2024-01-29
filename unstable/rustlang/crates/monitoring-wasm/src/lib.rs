@@ -19,7 +19,9 @@ pub fn initial_state(_input: ()) -> FnResult<Json<monitoring::State>> {
 
 #[derive(serde::Deserialize)]
 struct EvolveCommand {
+    #[serde(with = "serde_json::json")]
     pub event: monitoring::Event,
+    #[serde(with = "serde_json::json")]
     pub state: monitoring::State,
 }
 
@@ -68,10 +70,25 @@ pub fn unmarshal_event(
     Ok(Json(u))
 }
 
+// // Custom deserialization for the Command enum
+// fn deserialize_command<'de, D>(deserializer: D) -> Result<monitoring::Command, D::Error>
+//   where
+//     D: serde::Deserializer<'de>,
+// {
+//   let s = String::deserialize(deserializer)?;
+//   serde_json::from_str(&s).map_err(serde::de::Error::custom)
+// }
+
 #[derive(serde::Deserialize)]
 struct DecideCommand {
+    #[serde(with = "serde_json::json")]
+    // #[serde(deserialize_with = "deserialize_command")]
     pub state: monitoring::State,
+    #[serde(with = "serde_json::json")]
     pub command: monitoring::Command,
+
+  // pub state: Json<monitoring::State>,
+    // pub command: Json<monitoring::Command>,
 }
 
 #[plugin_fn]

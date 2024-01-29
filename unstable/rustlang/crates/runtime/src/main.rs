@@ -1,7 +1,8 @@
 use eventstore::Client;
 use infra::wasmeventsourcing::WasmEventSourcingDecider;
 
-fn main() {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let settings = "esdb://127.0.0.1:2113?tls=false&keepAliveTimeout=10000&keepAliveInterval=10000"
         .parse()
         .unwrap();
@@ -17,16 +18,15 @@ fn main() {
 
     let mut decider = WasmEventSourcingDecider::new(&mut plugin);
 
-    let result = decider.dispatch_command(
-        client,
-        serde_json::json!({
-          "CreateMonitoring": {"id": "1", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
-        })
-        .to_string()
-        .as_bytes()
-        .to_vec(),
-        None,
-    )?;
+    let result = decider
+        .dispatch_command(
+            client,
+            serde_json::json!({
+              "CreateMonitoring": {"id": "1", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
+            }).to_string(),
+            None,
+        )
+        .await?;
 
     println!("result: {:?}", result);
 
@@ -98,4 +98,6 @@ fn main() {
 
     let decide: String = plugin.call("decide", payload).unwrap();
     println!("decide: {}", decide);
+
+    Ok(())
 }
