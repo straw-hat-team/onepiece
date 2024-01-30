@@ -4,25 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"sync"
 	"time"
+	golang "unstable"
 
-	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 )
 
 func main() {
-
-	url := os.Getenv("NATS_URL")
-	if url == "" {
-		url = nats.DefaultURL
-	}
-
-	nc, _ := nats.Connect(url)
+	nc, js := golang.NewNats()
 	defer nc.Drain()
-
-	js, _ := jetstream.New(nc)
 
 	streamName := "EVENTS"
 

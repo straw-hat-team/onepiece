@@ -3,20 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
 	"github.com/gofrs/uuid"
 	"github.com/straw-hat-team/onepiece/go/onepiece/eventsourcing"
+	golang "unstable"
 	"unstable/plandomain/planproto"
 	"unstable/planinfra"
 )
 
 func main() {
-	err, db := newEsDb()
-
-	if err != nil {
-		panic(err)
-	}
-
+	eventStore := golang.MustNewEventStore()
 	planID := uuid.Must(uuid.NewV4()).String()
 	command := &planproto.CreatePlan{
 		PlanId: planID,
@@ -34,7 +29,7 @@ func main() {
 
 	result, err := planinfra.DispatchCommand(
 		context.Background(),
-		db,
+		eventStore,
 		&planproto.Command{
 			Command: &planproto.Command_CreatePlan{CreatePlan: command},
 		},
@@ -50,15 +45,4 @@ func main() {
 	}
 
 	fmt.Printf("%v\n", result)
-}
-
-func newEsDb() (error, *esdb.Client) {
-	settings, err := esdb.ParseConnectionString("esdb://127.0.0.1:2113?tls=false&keepAliveTimeout=10000&keepAliveInterval=10000")
-
-	if err != nil {
-		panic(err)
-	}
-
-	db, err := esdb.NewClient(settings)
-	return err, db
 }
