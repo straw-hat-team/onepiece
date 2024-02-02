@@ -1,4 +1,8 @@
 bazil.org/fuse v0.0.0-20160811212531-371fbbdaa898/go.mod h1:Xbm+BRKSBEpa4q4hTSxohYNQpsxXPbPry4JJWOB3LB8=
+buf.build/gen/go/straw-hat-llc/onepiece/protocolbuffers/go v1.32.0-20240202040538-fa9f0305aff6.1 h1:9htJ1wSYvRChRiuzj/NbFiDqoIAeqIDidI94U6nVEY4=
+buf.build/gen/go/straw-hat-llc/onepiece/protocolbuffers/go v1.32.0-20240202040538-fa9f0305aff6.1/go.mod h1:k+eica07HJIfMSrQfFs3KjbVKWE78/BYMZaSRxLzxwk=
+buf.build/gen/go/straw-hat-llc/onepiece/protocolbuffers/go v1.32.0-20240202045542-3e9c63088b49.1 h1:5638bCJRcJjvTliNglIyFPjr8i7xZUUgUg1FGfPaZ+M=
+buf.build/gen/go/straw-hat-llc/onepiece/protocolbuffers/go v1.32.0-20240202045542-3e9c63088b49.1/go.mod h1:k+eica07HJIfMSrQfFs3KjbVKWE78/BYMZaSRxLzxwk=
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 cloud.google.com/go v0.38.0/go.mod h1:990N+gfupTy94rShfmMCWGDn0LpTmnzTp2qbd1dvSRU=

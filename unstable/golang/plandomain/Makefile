@@ -1,2 +1,2 @@
 buf-generate:
-	buf generate
+	buf generate --include-imports

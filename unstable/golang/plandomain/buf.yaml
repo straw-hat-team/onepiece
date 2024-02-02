@@ -1,7 +1,8 @@
 version: v1
 name: buf.build/straw-hat-llc/plans
 deps:
-  - buf.build/protocolbuffers/wellknowntypes:v25.2
+  - buf.build/straw-hat-llc/onepiece
+  - buf.build/googleapis/googleapis:3d83e3652f689ab51c3f95f876458c6faef619bf
 breaking:
   use:
     - FILE

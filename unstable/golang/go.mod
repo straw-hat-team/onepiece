@@ -5,6 +5,7 @@ go 1.21
 replace github.com/straw-hat-team/onepiece/go => ../../go
 
 require (
+	buf.build/gen/go/straw-hat-llc/onepiece/protocolbuffers/go v1.32.0-20240202045542-3e9c63088b49.1
 	github.com/EventStore/EventStore-Client-Go/v3 v3.2.1
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/protobuf v1.5.3

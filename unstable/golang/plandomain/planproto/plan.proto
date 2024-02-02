@@ -3,6 +3,9 @@ syntax = "proto3";
 package com.hmbradley.deposit.plan;
 
 import "google/protobuf/timestamp.proto";
+//import "googleapis/google/api/field_behavior.proto";
+import "google/protobuf/descriptor.proto";
+import "straw-hat-llc/onepiece/extensions.proto";
 
 message Command {
   oneof command {
@@ -25,19 +28,19 @@ message Event {
 }
 
 message FailDrainPlan {
-  string planId = 1;
+  string planId = 1 [(onepiece.protobuf.stream_id) = true];
   string transferId = 2;
   google.protobuf.Timestamp failedAt = 3;
 }
 
 message DrainPlan {
-  string planId = 1;
+  string planId = 1 [(onepiece.protobuf.stream_id) = true];
   string transferId = 2;
   google.protobuf.Timestamp drainedAt = 3;
 }
 
 message UpdatePlan {
-  string planId = 1;
+  string planId = 1 [(onepiece.protobuf.stream_id) = true];
   string title = 2;
   string color = 3;
   Amount goalAmount = 4;
@@ -47,13 +50,13 @@ message UpdatePlan {
 }
 
 message ArchivePlan {
-  string planId = 1;
+  string planId = 1 [(onepiece.protobuf.stream_id) = true];
   string archivedBy = 2;
   google.protobuf.Timestamp archivedAt = 3;
 }
 
 message CreatePlan {
-  string planId = 1;
+  string planId = 1 [(onepiece.protobuf.stream_id) = true];
   string title = 2;
   string color = 3;
   Amount goalAmount = 4;
