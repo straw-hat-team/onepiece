@@ -17,19 +17,20 @@ pub fn initial_state(_input: ()) -> FnResult<Json<monitoring::State>> {
     Ok(Json(monitoring::initial_state()))
 }
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 struct EvolveCommand {
-    #[serde(with = "serde_json::json")]
-    pub event: monitoring::Event,
-    #[serde(with = "serde_json::json")]
-    pub state: monitoring::State,
+    pub event: String,
+    pub state: String,
 }
 
 #[plugin_fn]
-pub fn evolve(Json(event_state): Json<EvolveCommand>) -> FnResult<Json<monitoring::State>> {
+pub fn evolve(Json(evolve_command): Json<EvolveCommand>) -> FnResult<Json<monitoring::State>> {
+    let state: monitoring::State = serde_json::from_str(&evolve_command.state)?;
+    let event: monitoring::Event = serde_json::from_str(&evolve_command.event)?;
+
     Ok(Json(monitoring::evolve(
-        &event_state.state,
-        &event_state.event,
+        &state,
+        &event,
     )))
 }
 
@@ -63,37 +64,24 @@ struct UnmarshalEventCommand {
 pub fn unmarshal_event(
     Json(command): Json<UnmarshalEventCommand>,
 ) -> FnResult<Json<monitoring::Event>> {
-    debug!("unmarshal_event: {:?}", command);
+    debug!("unmarshal_event: {:?}", command.event_type);
     let u: monitoring::Event = serde_json::from_str(&command.payload.as_str())?;
     println!("{:#?}", u);
-
     Ok(Json(u))
 }
 
-// // Custom deserialization for the Command enum
-// fn deserialize_command<'de, D>(deserializer: D) -> Result<monitoring::Command, D::Error>
-//   where
-//     D: serde::Deserializer<'de>,
-// {
-//   let s = String::deserialize(deserializer)?;
-//   serde_json::from_str(&s).map_err(serde::de::Error::custom)
-// }
-
-#[derive(serde::Deserialize)]
+#[derive(Debug, serde::Deserialize)]
 struct DecideCommand {
-    #[serde(with = "serde_json::json")]
-    // #[serde(deserialize_with = "deserialize_command")]
-    pub state: monitoring::State,
-    #[serde(with = "serde_json::json")]
-    pub command: monitoring::Command,
-
-  // pub state: Json<monitoring::State>,
-    // pub command: Json<monitoring::Command>,
+    pub state: String,
+    pub command: String,
 }
 
 #[plugin_fn]
-pub fn decide(Json(command): Json<DecideCommand>) -> FnResult<Json<Vec<monitoring::Event>>> {
-  match monitoring::decide(&command.state, &command.command) {
+pub fn decide(Json(decide_command): Json<DecideCommand>) -> FnResult<Json<Vec<monitoring::Event>>> {
+  let command: monitoring::Command = serde_json::from_str(&decide_command.command)?;
+  let state: monitoring::State = serde_json::from_str(&decide_command.state)?;
+
+  match monitoring::decide(&state, &command) {
     Ok(events) => {
       Ok(Json(events))
     }
@@ -101,7 +89,6 @@ pub fn decide(Json(command): Json<DecideCommand>) -> FnResult<Json<Vec<monitorin
       Err(WithReturnCode::from(Error(err)))
     }
   }
-
 }
 
 struct Error(monitoring::Error);

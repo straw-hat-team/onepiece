@@ -40,15 +40,14 @@ impl WasmEventSourcingDecider<'_> {
                         .to_string(),
                     )?;
 
-                    state = self.plugin.call(
-                        "evolve",
-                        serde_json::json!({
-                          "state": state,
-                          "event": event,
-                        })
-                        .to_string()
-                        .as_str(),
-                    )?;
+                    let input = serde_json::json!({
+                      "state": state,
+                      "event": event,
+                    })
+                    .to_string();
+                    println!("input: {}", input);
+
+                    state = self.plugin.call("evolve", input.as_str())?;
                     last_event_expected_version =
                         Some(eventstore::ExpectedRevision::Exact(resolved_event.revision));
                 }
@@ -77,15 +76,7 @@ impl WasmEventSourcingDecider<'_> {
         .to_string();
         println!("input: {}", input);
 
-        let events: Json<Vec<String>> = self.plugin.call(
-            "decide",
-            serde_json::json!({
-              "state": state,
-              "command": command,
-            })
-            .to_string()
-            .as_str(),
-        )?;
+        let events: Json<Vec<serde_json::Value>> = self.plugin.call("decide", input.as_str())?;
         let mut record_events: Vec<eventstore::EventData> = vec![];
 
         let opts = opts.unwrap_or_default();
@@ -123,8 +114,7 @@ impl WasmEventSourcingDecider<'_> {
 
         let append_result = client
             .append_to_stream(stream_id.as_str(), &options, record_events)
-            .await
-            .unwrap();
+            .await?;
 
         Ok(DecisionResult {
             next_expected_version: append_result.next_expected_version,
@@ -136,7 +126,7 @@ impl WasmEventSourcingDecider<'_> {
 #[derive(Debug)]
 pub struct DecisionResult {
     pub next_expected_version: u64,
-    pub events: Vec<String>,
+    pub events: Vec<serde_json::Value>,
 }
 
 #[derive(Debug)]

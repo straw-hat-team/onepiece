@@ -8,7 +8,7 @@ pub enum Status {
     Running,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub enum Error {
     AlreadyExists,
     NotFound,
@@ -57,13 +57,13 @@ pub struct MonitoringResumed {
 
 #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct MonitoringStarted {
-    id: String,
-    url: String,
+    pub id: String,
+    pub url: String,
 }
 
 #[derive(PartialEq, Debug, serde::Serialize, serde::Deserialize)]
 pub struct MonitoringPaused {
-    id: String,
+    pub id: String,
 }
 
 pub fn initial_state() -> State {
