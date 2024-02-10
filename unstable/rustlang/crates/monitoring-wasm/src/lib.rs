@@ -64,9 +64,7 @@ struct UnmarshalEventCommand {
 pub fn unmarshal_event(
     Json(command): Json<UnmarshalEventCommand>,
 ) -> FnResult<Json<monitoring::Event>> {
-    debug!("unmarshal_event: {:?}", command.event_type);
-    let u: monitoring::Event = serde_json::from_str(&command.payload.as_str())?;
-    println!("{:#?}", u);
+    let u: monitoring::Event = serde_json::from_str(&command.payload)?;
     Ok(Json(u))
 }
 

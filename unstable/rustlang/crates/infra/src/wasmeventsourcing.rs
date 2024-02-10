@@ -30,15 +30,14 @@ impl WasmEventSourcingDecider<'_> {
             match stream.next().await {
                 Ok(Some(event)) => {
                     let resolved_event = event.get_original_event();
+                    let input = serde_json::json!({
+                        "event_type": resolved_event.event_type.as_str(),
+                        "payload": String::from_utf8(resolved_event.data.to_vec()).unwrap(),
+                    })
+                    .to_string();
+                    println!("input: {}", input);
 
-                    let event: String = self.plugin.call(
-                        "unmarshal_event",
-                        serde_json::json!({
-                            "event_type": resolved_event.event_type.as_str(),
-                            "payload": resolved_event.data.to_vec(),
-                        })
-                        .to_string(),
-                    )?;
+                    let event: String = self.plugin.call("unmarshal_event", input.as_str())?;
 
                     let input = serde_json::json!({
                       "state": state,

@@ -17,3 +17,5 @@ rand = "0.8.5"
 extism = "1.0.0"
 io-extras = {version =  "0.17.1", features = ["tokio"] }
 anyhow = "1.0.79"
+futures = "0.3.29"
+async-nats = {version = "0.33.0", features = ["service"] }
