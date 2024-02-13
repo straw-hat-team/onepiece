@@ -56,7 +56,7 @@ pub fn marshal_event(Json(event): Json<monitoring::Event>) -> FnResult<Vec<u8>> 
 
 #[derive(Debug, serde::Deserialize)]
 struct UnmarshalEventCommand {
-    pub event_type: String,
+    // pub event_type: String,
     pub payload: String,
 }
 
