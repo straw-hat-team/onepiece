@@ -25,7 +25,7 @@ func NewNats() (*nats.Conn, jetstream.JetStream) {
 	if len(strings.TrimSpace(natsUrl)) == 0 {
 		natsUrl = nats.DefaultURL
 	}
-	nc, err := nats.Connect(natsUrl)
+	nc, err := nats.Connect(natsUrl, nats.Name("OnePiece"))
 	Must(err)
 
 	js, err := jetstream.New(nc)

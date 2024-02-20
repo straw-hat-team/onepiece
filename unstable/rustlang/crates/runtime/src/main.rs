@@ -2,8 +2,9 @@ use async_nats::jetstream;
 use async_nats::jetstream::kv::Entry;
 use async_nats::service::ServiceExt;
 use eventstore::Client;
+use extism::ToBytes;
 use futures::StreamExt;
-use infra::wasmeventsourcing::WasmEventSourcingDecider;
+use infra::wasmeventsourcing::{Options, WasmEventSourcingDecider};
 use serde_json::{Map, Value};
 
 #[derive(Debug)]
@@ -36,9 +37,11 @@ async fn main() -> anyhow::Result<()> {
     let nats_url =
         std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
 
-    let nats = async_nats::connect(nats_url).await.unwrap();
+    let nats = async_nats::ConnectOptions::new()
+      .name("decider-wasm")
+      .connect(nats_url).await.unwrap();
 
-    let jetstream = jetstream::new(nats.clone());
+    let _jetstream = jetstream::new(nats.clone());
 
     let settings = "esdb://127.0.0.1:2113?tls=false&keepAliveTimeout=10000&keepAliveInterval=10000"
         .parse()
@@ -56,60 +59,60 @@ async fn main() -> anyhow::Result<()> {
 
     let mut endpoint = service.endpoint("srv.command.*.*").await.unwrap();
 
-    if let Some(request) = endpoint.next().await {
+    loop {
+      if let Some(request) = endpoint.next().await {
         let command_handler = parse_command(request.message.subject.as_str()).unwrap();
         let service_command: ServiceCommand =
-            serde_json::from_slice(&request.message.payload).unwrap();
+          serde_json::from_slice(&request.message.payload).unwrap();
 
         println!("{:?} ---> {:?}", command_handler, service_command);
 
         let file_path = std::env::current_dir()
-            .unwrap()
-            .join("target/wasm32-wasi/debug/monitoring_wasm.wasm");
+          .unwrap()
+          .join("target/wasm32-wasi/debug/monitoring_wasm.wasm");
         let url = extism::Wasm::file(file_path.as_path());
 
         let manifest = extism::Manifest::new([url])
-            .with_timeout(std::time::Duration::from_secs(1))
-            .with_memory_max(1024 * 1024 * 50);
+          .with_timeout(std::time::Duration::from_secs(1))
+          .with_memory_max(1024 * 1024 * 50);
 
         let mut plugin = extism::Plugin::new(&manifest, [], true).unwrap();
-        let mut decider = WasmEventSourcingDecider::new(&mut plugin);
 
-        let result = decider
-            .dispatch_command(client, service_command.payload.to_string(), None)
-            .await
-            .unwrap();
+        // metadata.insert(
+        //   "$correlationId".to_string(),
+        //   opts.correlation_id.unwrap_or_default().to_string(),
+        // );
+        // metadata.insert(
+        //   "$causationId".to_string(),
+        //   opts.causation_id.unwrap_or_default().to_string(),
+        // );
+
+        let opts = Options::default();
+
+        let result = WasmEventSourcingDecider::new(&mut plugin)
+          .dispatch_command(client.clone(), service_command.payload.to_string(), Some(opts))
+          .await
+          .unwrap();
 
         println!("POG CRAZY");
         println!("result: {:?}", result);
 
-        request.respond(Ok("hello".into())).await.unwrap();
+        let resp = serde_json::json!({"next_expected_version": result.next_expected_version}).to_bytes().unwrap();
+        request.respond(Ok(resp.into())).await.unwrap();
+      }
     }
-    Ok(())
-
-    // let file_path = std::env::current_dir()
-    //       .unwrap()
-    //       .join("target/wasm32-wasi/debug/monitoring_wasm.wasm");
-    //   // .join("target/wasm32-unknown-unknown/debug/monitoring_wasm.wasm");
-    //
-    //   let url = extism::Wasm::file(file_path.as_path());
-    //   let manifest = extism::Manifest::new([url]);
-    //   let mut plugin = extism::Plugin::new(&manifest, [], true).unwrap();
-    //
-    //   let mut decider = WasmEventSourcingDecider::new(&mut plugin);
-    //
-    //   let result = decider
-    //       .dispatch_command(
-    //           client,
-    //           serde_json::json!({
-    //             "CreateMonitoring": {"id": "2", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"}
-    //           })
-    //           .to_string(),
-    //           None,
-    //       )
-    //       .await?;
-    //
-    //   println!("result: {:?}", result);
-    //
-    //   Ok(())
 }
+
+// $by_category example $ce-monitoring
+// $by_event_type example $et-MonitoringStarted
+// $by_correlation_id example $bc-<correlation id>
+// $stream_by_category example $category-monitoring
+// $streams example
+//
+// {
+// "correlationIdProperty": "$myCorrelationId"
+// }
+
+
+// first
+// -

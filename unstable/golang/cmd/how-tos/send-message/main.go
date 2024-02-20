@@ -22,7 +22,7 @@ func main() {
 		}
 	`, uuid)
 
-	rep, er := nc.Request("srv.command.monitoring.create-monitoring", []byte(payload), time.Second)
+	rep, er := nc.Request("srv.command.monitoring.create-monitoring", []byte(payload), time.Second*3)
 	if er != nil {
 		fmt.Println(er)
 		return

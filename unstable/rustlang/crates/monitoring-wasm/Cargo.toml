@@ -3,12 +3,6 @@ name = "monitoring-wasm"
 version = "0.1.0"
 edition = "2021"
 
-[profile.release]
-opt-level = "z" # Optimize for size
-lto = true # Enable Link Time Optimization
-codegen-units = 1 # Reduce number of codegen units to increase optimizations
-strip = "symbols" # Strip debug symbols to reduce size
-
 [lib]
 crate-type = ["cdylib"]
 
