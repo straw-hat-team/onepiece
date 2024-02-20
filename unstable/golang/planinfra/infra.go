@@ -3,6 +3,7 @@ package planinfra
 import (
 	"github.com/straw-hat-team/onepiece/go/onepiece"
 	"github.com/straw-hat-team/onepiece/go/onepiece/eventsourcing"
+	"github.com/straw-hat-team/onepiece/go/onepiece/eventsourcing/onepiecemessage"
 	"github.com/straw-hat-team/onepiece/go/onepiece/protobuf"
 	"google.golang.org/protobuf/encoding/protojson"
 	"unstable/plandomain/commands/archiveplan"
@@ -77,17 +78,17 @@ func marshalEvent(event *planproto.Event) (eventsourcing.ContentType, []byte, er
 	return eventsourcing.ContentTypeJson, b, err
 }
 
-func eventTypeProvider(event *planproto.Event) (string, error) {
+func eventTypeProvider(event *planproto.Event) (*onepiecemessage.MessageType, error) {
 	switch e := event.Event.(type) {
 	case *planproto.Event_PlanCreated:
-		return protobuf.MessageFullName(e.PlanCreated).String(), nil
+		return protobuf.MessageFullName(e.PlanCreated).AsMessageType()
 	case *planproto.Event_PlanArchived:
-		return protobuf.MessageFullName(e.PlanArchived).String(), nil
+		return protobuf.MessageFullName(e.PlanArchived).AsMessageType()
 	case *planproto.Event_PlanDrained:
-		return protobuf.MessageFullName(e.PlanDrained).String(), nil
+		return protobuf.MessageFullName(e.PlanDrained).AsMessageType()
 	case *planproto.Event_PlanDrainFailed:
-		return protobuf.MessageFullName(e.PlanDrainFailed).String(), nil
+		return protobuf.MessageFullName(e.PlanDrainFailed).AsMessageType()
 	default:
-		return "", onepiece.ErrUnknownEvent
+		return nil, onepiece.ErrUnknownEvent
 	}
 }

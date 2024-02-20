@@ -7,6 +7,7 @@ import (
 	"github.com/EventStore/EventStore-Client-Go/v3/esdb"
 	"github.com/gofrs/uuid"
 	"github.com/straw-hat-team/onepiece/go/onepiece"
+	"github.com/straw-hat-team/onepiece/go/onepiece/eventsourcing/onepiecemessage"
 	"io"
 )
 
@@ -53,7 +54,7 @@ type Options struct {
 type UnmarshalEvent[Event any] func(eventType string, data []byte) (Event, error)
 type MarshalEvent[Event any] func(event Event) (ContentType, []byte, error)
 
-type GetEventType[Event any] func(event Event) (string, error)
+type GetEventType[Event any] func(event Event) (*onepiecemessage.MessageType, error)
 
 var (
 	maxReadSize = ^uint64(0)
@@ -139,7 +140,7 @@ func NewDecider[State any, Command any, Event any](
 			}
 
 			eventData[i] = esdb.EventData{
-				EventType:   eventType,
+				EventType:   eventType.String(),
 				ContentType: contentType,
 				Data:        data,
 				Metadata:    metadata,
