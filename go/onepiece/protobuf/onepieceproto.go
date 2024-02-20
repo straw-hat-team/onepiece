@@ -2,6 +2,7 @@ package protobuf
 
 import (
 	"fmt"
+	"github.com/straw-hat-team/onepiece/go/onepiece/eventsourcing/onepiecemessage"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -9,6 +10,10 @@ type FullName protoreflect.FullName
 
 func (s FullName) String() string {
 	return string(s)
+}
+
+func (s FullName) AsMessageType() (*onepiecemessage.MessageType, error) {
+	return onepiecemessage.NewMessageType(string(s))
 }
 
 func PackageName[Message protoreflect.ProtoMessage](msg Message) FullName {
