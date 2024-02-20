@@ -2,7 +2,12 @@
 version: v1
 deps:
   - remote: buf.build
-    owner: protocolbuffers
-    repository: wellknowntypes
-    commit: 07388c6f03d8499097fc72dc8d9ceacb
-    digest: shake256:8b1a810bad1bff3adf7d0a8ad42f0e9f8a6d26faba62511c6bee1f18f13499aaa6c70e926b79addd59b0ed13acb3e36bc6f94b9885bb3626d758f23c64630aca
+    owner: googleapis
+    repository: googleapis
+    commit: a86849a25cc04f4dbe9b15ddddfbc488
+    digest: shake256:e19143328f8cbfe13fc226aeee5e63773ca494693a72740a7560664270039a380d94a1344234b88c7691311460df9a9b1c2982190d0a2612eae80368718e1943
+  - remote: buf.build
+    owner: straw-hat-llc
+    repository: onepiece
+    commit: 3e9c63088b4940e0b58ce6c7b7a42bfe
+    digest: shake256:0e26da556093d9d701a6c01100fc4879a1d35a8930ca86ba1dce2188e9c6330deceade1db77663db85f0efab6949b3a1e5e877ee17ae820f05f3e8ca2241f454

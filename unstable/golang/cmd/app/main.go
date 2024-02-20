@@ -11,6 +11,10 @@ import (
 )
 
 func main() {
+	if ProtoTesting() {
+		return
+	}
+
 	eventStore := golang.MustNewEventStore()
 	planID := uuid.Must(uuid.NewV4()).String()
 	command := &planproto.CreatePlan{
