@@ -9,7 +9,7 @@ pub fn stream_id(Json(command): Json<monitoring::Command>) -> FnResult<String> {
         monitoring::Command::ResumeMonitoring(command) => command.id,
     };
 
-    Ok(format!("monitoring:{}", id))
+    Ok(format!("monitoring.{}", id))
 }
 
 #[plugin_fn]

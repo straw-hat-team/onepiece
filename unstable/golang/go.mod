@@ -6,6 +6,7 @@ replace github.com/straw-hat-team/onepiece/go => ../../go
 
 require (
 	github.com/EventStore/EventStore-Client-Go/v3 v3.2.1
+	github.com/aws/aws-sdk-go v1.50.23
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/golang/protobuf v1.5.3
 	github.com/nats-io/nats.go v1.32.0
@@ -16,6 +17,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.17.2 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
