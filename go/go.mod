@@ -6,7 +6,7 @@ require (
 	github.com/EventStore/EventStore-Client-Go/v3 v3.2.1
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/stretchr/testify v1.8.3
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
