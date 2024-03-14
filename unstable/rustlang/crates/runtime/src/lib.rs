@@ -80,6 +80,3 @@ async fn run(opts: Option<Options>) -> Result<DecisionResult<monitoring::Event>,
 
   return command_handler.dispatch_command(client, &command, opts).await;
 }
-
-// curl "https://4iykoi7jk2kp5hhd5irhbdprn40yxest.lambda-url.us-west-2.on.aws/?myCustomParameter=squirrel"
-// $OP.REQ.SRV.<account id>.<service>.<method>

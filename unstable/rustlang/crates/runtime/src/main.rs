@@ -116,3 +116,6 @@ async fn main() -> anyhow::Result<()> {
 
 // first
 // -
+
+// curl "https://4iykoi7jk2kp5hhd5irhbdprn40yxest.lambda-url.us-west-2.on.aws/?myCustomParameter=squirrel"
+// $OP.REQ.SRV.<account id>.<service>.<method>
