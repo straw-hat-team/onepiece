@@ -1,192 +1,121 @@
-mod wit {
-  wasmtime::component::bindgen!({
-        path: "wit/my-component.wit",
-        world: "hello-world",
-        // ownership: Borrowing { duplicate_if_necessary: true },
-        // async: true,
-    });
+use async_nats::jetstream;
+use async_nats::jetstream::kv::Entry;
+use async_nats::service::ServiceExt;
+use eventstore::Client;
+use extism::ToBytes;
+use futures::StreamExt;
+use infra::wasmeventsourcing::{Options, WasmEventSourcingDecider};
+use serde_json::{Map, Value};
+
+#[derive(Debug)]
+struct CommandHandler<'a> {
+    service: &'a str,
+    method: &'a str,
 }
 
-use wasmtime::component::*;
-use wasmtime::{Config, Engine, Store, Caller, Module};
-use crate::wit::HelloWorldImports;
+fn parse_command(input: &str) -> Option<CommandHandler> {
+    let parts: Vec<&str> = input.split('.').collect();
 
-struct MyState {
-  name: String,
+    if parts.len() == 4 && parts[0] == "srv" && parts[1] == "command" {
+        Some(CommandHandler {
+            service: parts[2],
+            method: parts[3],
+        })
+    } else {
+        None
+    }
 }
 
-// Imports into the world, like the `name` import for this world, are satisfied
-// through traits.
-impl HelloWorldImports for MyState {
-  // Note the `Result` return value here where `Ok` is returned back to
-  // the component and `Err` will raise a trap.
-  fn name(&mut self) -> wasmtime::Result<String> {
-    Ok(self.name.clone())
-  }
+#[derive(Debug, serde::Deserialize)]
+struct ServiceCommand {
+    pub metadata: Option<Map<String, serde_json::Value>>,
+    pub payload: serde_json::Value,
 }
 
-fn main() -> wasmtime::Result<()> {
-  // Configure an `Engine` and compile the `Component` that is being run for
-  // the application.
-  let mut config = Config::new();
-  config.wasm_component_model(true);
-  let engine = Engine::new(&config)?;
-  let component = Component::from_file(&engine, "./your-component.wasm")?;
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let nats_url =
+        std::env::var("NATS_URL").unwrap_or_else(|_| "nats://localhost:4222".to_string());
 
-  // Instantiation of bindings always happens through a `Linker`.
-  // Configuration of the linker is done through a generated `add_to_linker`
-  // method on the bindings structure.
-  //
-  // Note that the closure provided here is a projection from `T` in
-  // `Store<T>` to `&mut U` where `U` implements the `HelloWorldImports`
-  // trait. In this case the `T`, `MyState`, is stored directly in the
-  // structure so no projection is necessary here.
-  let mut linker = Linker::new(&engine);
-  wit::HelloWorld::add_to_linker(&mut linker, |state: &mut MyState| state)?;
+    let nats = async_nats::ConnectOptions::new()
+      .name("decider-wasm")
+      .connect(nats_url).await.unwrap();
 
-  // As with the core wasm API of Wasmtime instantiation occurs within a
-  // `Store`. The bindings structure contains an `instantiate` method which
-  // takes the store, component, and linker. This returns the `bindings`
-  // structure which is an instance of `HelloWorld` and supports typed access
-  // to the exports of the component.
-  let mut store = Store::new(
-    &engine,
-    MyState {
-      name: "me".to_string(),
-    },
-  );
-  let (bindings, _) = wit::HelloWorld::instantiate(&mut store, &component, &linker)?;
+    let _jetstream = jetstream::new(nats.clone());
 
-  // Here our `greet` function doesn't take any parameters for the component,
-  // but in the Wasmtime embedding API the first argument is always a `Store`.
-  bindings.call_greet(&mut store)?;
-  Ok(())
+    let settings = "esdb://127.0.0.1:2113?tls=false&keepAliveTimeout=10000&keepAliveInterval=10000"
+        .parse()
+        .unwrap();
+
+    let client = Client::new(settings).unwrap();
+
+    let service = nats
+        .service_builder()
+        .description("Event Sourcing WASM Decider")
+        .stats_handler(|endpoint, _stats| serde_json::json!({ "endpoint": endpoint }))
+        .start("decider-wasm", "0.0.1")
+        .await
+        .unwrap();
+
+    let mut endpoint = service.endpoint("srv.command.*.*").await.unwrap();
+
+    loop {
+      if let Some(request) = endpoint.next().await {
+        let command_handler = parse_command(request.message.subject.as_str()).unwrap();
+        let service_command: ServiceCommand =
+          serde_json::from_slice(&request.message.payload).unwrap();
+
+        println!("{:?} ---> {:?}", command_handler, service_command);
+
+        let file_path = std::env::current_dir()
+          .unwrap()
+          .join("target/wasm32-wasi/debug/monitoring_wasm.wasm");
+        let url = extism::Wasm::file(file_path.as_path());
+
+        let manifest = extism::Manifest::new([url])
+          .with_timeout(std::time::Duration::from_secs(1))
+          .with_memory_max(1024 * 1024 * 50);
+
+        let mut plugin = extism::Plugin::new(&manifest, [], true).unwrap();
+
+        // metadata.insert(
+        //   "$correlationId".to_string(),
+        //   opts.correlation_id.unwrap_or_default().to_string(),
+        // );
+        // metadata.insert(
+        //   "$causationId".to_string(),
+        //   opts.causation_id.unwrap_or_default().to_string(),
+        // );
+
+        let opts = Options::default();
+
+        let result = WasmEventSourcingDecider::new(&mut plugin)
+          .dispatch_command(client.clone(), service_command.payload.to_string(), Some(opts))
+          .await
+          .unwrap();
+
+        println!("POG CRAZY");
+        println!("result: {:?}", result);
+
+        let resp = serde_json::json!({"next_expected_version": result.next_expected_version}).to_bytes().unwrap();
+        request.respond(Ok(resp.into())).await.unwrap();
+      }
+    }
 }
 
-
-// #[tokio::main]
-// async fn main() {
-//   // let mut config = wasmtime::Config::new();
-//   // config.async_support(true).wasm_component_model(true);
-//   // let engine = Engine::new(&config)?;
-//   // let component = Component::from_file(&engine, &file)?;
-//   // let mut linker = Linker::new(&engine);
-//   // let mut store = Store::new(&engine, 4);
+// $by_category example $ce-monitoring
+// $by_event_type example $et-MonitoringStarted
+// $by_correlation_id example $bc-<correlation id>
+// $stream_by_category example $category-monitoring
+// $streams example
 //
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//   // Modules can be compiled through either the text or binary format
-//   // let engine = Engine::default();
-//   // let wat = r#"
-//   //       (module
-//   //           (import "host" "host_func" (func $host_hello (param i32)))
-//   //
-//   //           (func (export "hello")
-//   //               i32.const 3
-//   //               call $host_hello)
-//   //       )
-//   //   "#;
-//   // let module = Module::new(&engine, wat).unwrap();
-//   //
-//   // // All wasm objects operate within the context of a "store". Each
-//   // // `Store` has a type parameter to store host-specific data, which in
-//   // // this case we're using `4` for.
-//   // let mut store = Store::new(&engine, 4);
-//   // let host_func = wasmtime::Func::wrap(&mut store, |caller: Caller<'_, u32>, param: i32| {
-//   //   println!("Got {} from WebAssembly", param);
-//   //   println!("my host state is: {}", caller.data());
-//   // });
-//   //
-//   // // Instantiation of a module requires specifying its imports and then
-//   // // afterwards we can fetch exports by name, as well as asserting the
-//   // // type signature of the function with `get_typed_func`.
-//   // let instance = wasmtime::Instance::new(&mut store, &module, &[host_func.into()]).unwrap();
-//   // let hello = instance.get_typed_func::<(), ()>(&mut store, "hello").unwrap();
-//   //
-//   // // And finally we can call the wasm!
-//   // hello.call(&mut store, ()).unwrap();
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//   // Configure an `Engine` and compile the `Component` that is being run for
-//   // the application.
-//   let mut config = Config::new();
-//   config.wasm_component_model(true);
-//   let engine = Engine::new(&config)?;
-//   let component = Component::from_file(&engine, "./your-component.wasm")?;
-//
-//   // Instantiation of bindings always happens through a `Linker`.
-//   // Configuration of the linker is done through a generated `add_to_linker`
-//   // method on the bindings structure.
-//   //
-//   // Note that the closure provided here is a projection from `T` in
-//   // `Store<T>` to `&mut U` where `U` implements the `HelloWorldImports`
-//   // trait. In this case the `T`, `MyState`, is stored directly in the
-//   // structure so no projection is necessary here.
-//   let mut linker = Linker::new(&engine);
-//   HelloWorld::add_to_linker(&mut linker, |state: &mut MyState| state)?;
-//
-//   // As with the core wasm API of Wasmtime instantiation occurs within a
-//   // `Store`. The bindings structure contains an `instantiate` method which
-//   // takes the store, component, and linker. This returns the `bindings`
-//   // structure which is an instance of `HelloWorld` and supports typed access
-//   // to the exports of the component.
-//   let mut store = Store::new(
-//     &engine,
-//     MyState {
-//       name: "me".to_string(),
-//     },
-//   );
-//   let (bindings, _) = HelloWorld::instantiate(&mut store, &component, &linker)?;
-//
-//   // Here our `greet` function doesn't take any parameters for the component,
-//   // but in the Wasmtime embedding API the first argument is always a `Store`.
-//   bindings.call_greet(&mut store)?;
-//   Ok(())
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//
-//   //
-//   // let result = run(None).await?;
-//   // println!("{:?}", result);
-//   // Ok(())
+// {
+// "correlationIdProperty": "$myCorrelationId"
 // }
+
+
+// first
+// -
+
+// curl "https://4iykoi7jk2kp5hhd5irhbdprn40yxest.lambda-url.us-west-2.on.aws/?myCustomParameter=squirrel"
+// $OP.REQ.SRV.<account id>.<service>.<method>

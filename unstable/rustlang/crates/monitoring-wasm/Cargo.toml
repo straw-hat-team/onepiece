@@ -7,5 +7,9 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-wit-bindgen = {version =  "0.16.0", features = ["default"]}
-bitflags = "2.4.2"
+extism-pdk = "1.0.0"
+monitoring = { path = "../monitoring" }
+getrandom = { version = "0.2.12", features = ["js"] }
+serde = { version = "1.0.196", features = ["derive"] }
+serde_json = { version = "1.0.113" , features = [] }
+anyhow = "1.0.79"
